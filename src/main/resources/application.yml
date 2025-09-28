@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: shop_management
+
+  datasource:
+    url: jdbc:mysql://localhost:3305/shop_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: "Minhthe2004:)"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8383
+
+vnpay:
+  tmnCode: 0YM4H4B2
+  hashSecret: H0FD5NZZ7GQNPB3UKY7LVJZAR2KG2B5L
+  payUrl: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  returnUrl: http://localhost:8383/user/payment-return
+  version: 2.1.0
+  command: pay
+  orderType: other
