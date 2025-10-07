@@ -118,6 +118,13 @@
                         <div class="collapse " id="sidebarDashboards">
                             <ul class="nav flex-column">
 
+                                <!-- Dashboard mới -->
+                                <li class="nav-item">
+                                    <a th:href="@{/admin/home}" class="nav-link">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+
                                 <li class="nav-item">
                                     <a class="nav-link" href="#sidebarItems" data-bs-toggle="collapse" role="button"
                                        aria-expanded="false" aria-controls="sidebarItems">
@@ -170,23 +177,22 @@
                                             </li>
                                         </ul>
                                         <li class="nav-item">
-                                            <a th:href="@{/list-user}" class="nav-link ">Orders</a>
+                                            <a th:href="@{/admin/ecommerce-order}" class="nav-link ">Orders</a>
                                         </li><!--end nav-item-->
                                     </div>
                                 </li>
                             </ul>
 
 
-
-                    <div class="update-msg text-center">
-                        <div class="d-flex justify-content-center align-items-center thumb-lg update-icon-box  rounded-circle mx-auto">
-                            <img src="/images/extra/party.gif" alt="" class="d-inline-block me-1" height="30">
-                        </div>
-                        <h5 class="mt-3">Group 3</h5>
-                        <p class="mb-3 text-muted">Dastone is a high quality web applications.</p>
-                        <a href="javascript: void(0);" class="btn bg-black text-white shadow-sm rounded-pill">Upgrade
-                            your plan</a>
-                    </div>
+                            <div class="update-msg text-center">
+                                <div class="d-flex justify-content-center align-items-center thumb-lg update-icon-box  rounded-circle mx-auto">
+                                    <img src="/images/extra/party.gif" alt="" class="d-inline-block me-1" height="30">
+                                </div>
+                                <h5 class="mt-3">Group 3</h5>
+                                <p class="mb-3 text-muted">Dastone is a high quality web applications.</p>
+                                <a href="javascript: void(0);" class="btn bg-black text-white shadow-sm rounded-pill">Upgrade
+                                    your plan</a>
+                            </div>
                         </div>
                 </ul>
             </div><!--end startbar-collapse-->
@@ -224,68 +230,6 @@
                                     <div class="col-auto">
                                         <form class="row g-2">
                                             <div class="col-auto">
-                                                <a class="btn bg-primary-subtle text-primary dropdown-toggle d-flex align-items-center arrow-none"
-                                                   data-bs-toggle="dropdown" href="#" role="button"
-                                                   aria-haspopup="false" aria-expanded="false"
-                                                   data-bs-auto-close="outside">
-                                                    <i class="iconoir-filter-alt me-1"></i> Filter
-                                                </a>
-                                                <div class="dropdown-menu dropdown-menu-start">
-                                                    <div class="p-2">
-                                                        <div class="form-check mb-2">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-all">
-                                                            <label class="form-check-label" for="filter-all">
-                                                                All
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check mb-2">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-one">
-                                                            <label class="form-check-label" for="filter-one">
-                                                                Fashion
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check mb-2">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-two">
-                                                            <label class="form-check-label" for="filter-two">
-                                                                Plants
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check mb-2">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-three">
-                                                            <label class="form-check-label" for="filter-three">
-                                                                Toys
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check mb-2">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-four">
-                                                            <label class="form-check-label" for="filter-four">
-                                                                Gadgets
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check mb-2">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-five">
-                                                            <label class="form-check-label" for="filter-five">
-                                                                Food
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check">
-                                                            <input type="checkbox" class="form-check-input" checked
-                                                                   id="filter-six">
-                                                            <label class="form-check-label" for="filter-six">
-                                                                Drinks
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div><!--end col-->
-
-                                            <div class="col-auto">
                                                 <a th:href="@{/add-user}" class="btn btn-primary">
                                                     <i class="fa-solid fa-plus me-1"></i> Add User
                                                 </a>
@@ -294,53 +238,111 @@
                                     </div><!--end col-->
                                 </div><!--end row-->
                             </div><!--end card-header-->
+                            <div th:if="${error}" class="alert alert-danger" role="alert">
+                                <span th:text="${error}"></span>
+                            </div>
+                            <div th:if="${success}" class="alert alert-success" role="alert">
+                                <span th:text="${success}"></span>
+                            </div>
+
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table mb-0 checkbox-all" id="datatable_1">
+                                    <table class="table table-hover align-middle text-center" id="datatable_1">
                                         <thead class="table-light">
                                         <tr>
-                                            <th style="width: 16px;">
-                                                <div class="form-check mb-0 ms-n1">
-                                                    <input type="checkbox" class="form-check-input" name="select-all"
-                                                           id="select-all">
-                                                </div>
-                                            </th>
-                                            <th>Code</th>
-                                            <th class="ps-0">Username</th>
+                                            <th style="width: 70px;">🆔 Code</th>
+                                            <th class="text-start ps-3">👤 Username</th>
+                                            <th>Full Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
                                             <th>Password</th>
-                                            <th>Roles</th>
+                                            <th>Role</th>
                                             <th>Status</th>
-                                            <th>Credit limit</th>
-                                            <th class="text-end">Action</th>
+                                            <th>Credit Limit</th>
+                                            <th style="width: 120px;">⚙️ Action</th>
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <tr th:each="user: ${userss}">
-                                            <td style="width: 16px;">
-                                                <div class="form-check">
-                                                    <input type="checkbox" class="form-check-input" name="check"
-                                                           id="customCheck1">
-                                                </div>
+                                        <tr th:each="user : ${userss}">
+                                            <!-- Code -->
+                                            <td th:text="${user.id}" class="fw-semibold text-secondary"></td>
+
+                                            <!-- Username -->
+                                            <td class="text-start ps-3 fw-medium text-dark">
+                                                <i class="fas fa-user text-primary me-2"></i>
+                                                <span th:text="${user.username}"></span>
                                             </td>
-                                            <td th:text="${user.id}"></td>
-                                            <td class="ps-0" th:text="${user.username}">
+
+                                            <!-- Full name -->
+                                            <td th:text="${user.full_name}"></td>
+
+                                            <!-- Email -->
+                                            <td>
+                                                <a th:href="'mailto:' + ${user.email}"
+                                                   th:text="${user.email}"
+                                                   class="text-decoration-none text-info"></a>
                                             </td>
-                                            <td th:text="${user.password}"></td>
-                                            <td th:text="${user.roles}"></td>
-                                            <td th:text="${user.status}"></td>
-                                            <td th:text="${user.credit_limit}"></td>
-                                            <td class="text-end">
-                                                <a th:href="@{'/edit-user/' + ${user.id}}"><i
-                                                        class="las la-pen text-secondary fs-18"></i></a>
+
+                                            <!-- Phone -->
+                                            <td th:text="${user.phone_number}"></td>
+
+                                            <!-- Password -->
+                                            <td>
+                                                <span class="text-muted fst-italic">••••••</span>
+                                            </td>
+
+                                            <!-- Roles -->
+                                            <td>
+                            <span th:switch="${user.roles}">
+                                <span th:case="'ADMIN'" class="badge bg-danger-subtle text-danger">Admin</span>
+                                <span th:case="'USER'" class="badge bg-success-subtle text-success">User</span>
+                                <span th:case="*"
+                                      class="badge bg-secondary-subtle text-secondary"
+                                      th:text="${user.roles}"></span>
+                            </span>
+                                            </td>
+
+                                            <!-- Status -->
+                                            <td>
+                            <span th:switch="${user.status}">
+                                <span th:case="1" class="badge bg-success">Active</span>
+                                <span th:case="0" class="badge bg-danger">Inactive</span>
+                                <span th:case="*" class="badge bg-secondary">Unknown</span>
+                            </span>
+                                            </td>
+
+                                            <!-- Credit limit -->
+                                            <td th:text="${#numbers.formatInteger(user.credit_limit, 0, 'POINT')} + ' VND'"
+                                                class="fw-semibold text-success"></td>
+
+                                            <!-- Action buttons -->
+                                            <td>
+                                                <a th:href="@{'/edit-user/' + ${user.id}}"
+                                                   class="btn btn-sm btn-outline-primary me-1"
+                                                   title="Edit user">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
                                                 <a th:href="@{'/delete-user/' + ${user.id}}"
-                                                   onclick="return confirm('Are you sure you want to delete this user?')"><i
-                                                        class="las la-trash-alt text-secondary fs-18"></i></a>
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('Are you sure you want to delete this user?')"
+                                                   title="Delete user">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Khi không có user nào -->
+                                        <tr th:if="${#lists.isEmpty(userss)}">
+                                            <td colspan="10" class="text-center text-muted py-4">
+                                                <i class="fas fa-info-circle me-2"></i> No users found.
                                             </td>
                                         </tr>
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
+
+
                         </div>
                     </div> <!-- end col -->
                 </div> <!-- end row -->
@@ -419,16 +421,16 @@
         <!-- end page content -->
     </div>
 </div>
-    <!-- end page-wrapper -->
+<!-- end page-wrapper -->
 
-    <!-- Javascript  -->
-    <!-- vendor js -->
+<!-- Javascript  -->
+<!-- vendor js -->
 
-    <script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/libs/simplebar/simplebar.min.js"></script>
-    <script src="/libs/simple-datatables/umd/simple-datatables.js"></script>
-    <script src="/js/pages/datatable.init.js"></script>
-    <script src="/js/app.js"></script>
+<script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/libs/simplebar/simplebar.min.js"></script>
+<script src="/libs/simple-datatables/umd/simple-datatables.js"></script>
+<script src="/js/pages/datatable.init.js"></script>
+<script src="/js/app.js"></script>
 </body>
 <!--end body-->
 

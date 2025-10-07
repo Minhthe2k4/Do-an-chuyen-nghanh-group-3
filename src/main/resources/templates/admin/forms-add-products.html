@@ -116,7 +116,13 @@
                             </a>
                             <div class="collapse " id="sidebarDashboards">
                                 <ul class="nav flex-column">
-                                   <!--end nav-item-->
+
+                                    <!-- Dashboard mới -->
+                                    <li class="nav-item">
+                                        <a th:href="@{/admin/home}" class="nav-link">
+                                            <span>Dashboard</span>
+                                        </a>
+                                    </li>
                                     <!-- Items -->
                                     <li class="nav-item">
                                         <a class="nav-link" href="#sidebarItems" data-bs-toggle="collapse" role="button"
@@ -215,20 +221,28 @@
                 <div class="container mt-4">
                     <div class="row">
                         <div class="col-lg-5 col-md-6"> <!-- form nhỏ hơn, nằm bên trái -->
-                            <form th:action="@{/add-product}" method="POST" th:object="${productss}">
+                            <form th:action="@{/add-product}" method="POST" th:object="${productss}" novalidate>
                                 <div class="card-body">
 
                                     <div class="mb-3 row">
                                         <label for="code" class="col-sm-3 col-form-label text-end">Code</label>
                                         <div class="col-sm-9">
-                                            <input class="form-control" type="text" id="code" th:field="*{item_code}">
+                                            <input class="form-control" type="text" id="code" th:field="*{item_code}"
+                                                   required minlength="2" maxlength="50">
+                                            <div class="invalid-feedback">
+                                                Code không được bỏ trống (2-50 ký tự).
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="mb-3 row">
                                         <label for="name" class="col-sm-3 col-form-label text-end">Name</label>
                                         <div class="col-sm-9">
-                                            <input class="form-control" type="text" id="name" th:field="*{item_name}">
+                                            <input class="form-control" type="text" id="name" th:field="*{item_name}"
+                                                   required minlength="2" maxlength="100">
+                                            <div class="invalid-feedback">
+                                                Tên sản phẩm không được bỏ trống(2-100 ký tự)
+                                            </div>
                                         </div>
                                     </div>
 
@@ -236,46 +250,83 @@
                                         <label for="price" class="col-sm-3 col-form-label text-end">Price</label>
                                         <div class="col-sm-9">
                                             <input class="form-control" type="number" step="0.01" id="price"
-                                                   th:field="*{item_price}">
+                                                   th:field="*{item_price}" required min="0.01">
+                                            <div class="invalid-feedback">
+                                                Giá sản phẩm phải lớn hơn 0.
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3 row">
+                                        <label for="stock_quantity" class="col-sm-3 col-form-label text-end">Stock quantity</label>
+                                        <div class="col-sm-9">
+                                            <input class="form-control" type="number" id="stock_quantity"
+                                                   th:field="*{stock_quantity}" required min="0">
+                                            <div class="invalid-feedback">
+                                                Số lượng tồn kho phải >= 0.
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="mb-3 row">
                                         <label for="category" class="col-sm-3 col-form-label text-end">Category</label>
                                         <div class="col-sm-9">
-                                            <select class="form-select" id="category" th:field="*{category.id}">
+                                            <select class="form-select" id="category" th:field="*{category.id}" required>
                                                 <option value="" disabled selected>Choose a category</option>
                                                 <option th:each="cat : ${categoriess}" th:value="${cat.id}"
                                                         th:text="${cat.category_name}">
                                                 </option>
                                             </select>
+                                            <div class="invalid-feedback">
+                                                Vui lòng chọn danh mục.
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="mb-3 row">
                                         <label for="image" class="col-sm-3 col-form-label text-end">Image</label>
                                         <div class="col-sm-9">
-                                            <input class="form-control" type="text" id="image" th:field="*{item_image}">
+                                            <input class="form-control" type="url" id="image" th:field="*{item_image}"
+                                                   required>
+                                            <div class="invalid-feedback">
+                                                Link ảnh không hợp lệ.
+                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="mb-3 row">
-                                        <label for="description"
-                                               class="col-sm-3 col-form-label text-end">Description</label>
+                                        <label for="description" class="col-sm-3 col-form-label text-end">Description</label>
                                         <div class="col-sm-9">
-                                            <textarea class="form-control" id="description"
-                                                      th:field="*{item_description}"></textarea>
+                <textarea class="form-control" id="description" th:field="*{item_description}"
+                          required minlength="5" maxlength="500"></textarea>
+                                            <div class="invalid-feedback">
+                                                Mô tả không được bỏ trống (5-500 ký tự).
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <!-- Nút Create ở góc phải -->
                                     <div class="d-flex justify-content-end mt-3">
                                         <button type="submit" class="btn btn-primary">Create</button>
                                     </div>
-
                                 </div>
                             </form>
 
+                            <script>
+                                // Bootstrap validation
+                                (function () {
+                                    'use strict'
+                                    const forms = document.querySelectorAll('form')
+                                    Array.from(forms).forEach(form => {
+                                        form.addEventListener('submit', event => {
+                                            if (!form.checkValidity()) {
+                                                event.preventDefault()
+                                                event.stopPropagation()
+                                            }
+                                            form.classList.add('was-validated')
+                                        }, false)
+                                    })
+                                })()
+                            </script>
                         </div>
                     </div>
                 </div>

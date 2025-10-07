@@ -36,25 +36,59 @@
                                 <!-- Hiển thị thông báo -->
                                 <div th:if="${errorMsg}" class="alert alert-danger" th:text="${errorMsg}"></div>
                                 <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+                                <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+                                <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
 
                                 <!-- REGISTER FORM -->
-                                <form class="my-4" th:action="@{/auth/register}" method="post">
+                                <form class="my-4" th:action="@{/auth/register}" method="post" id="registerForm" novalidate>
                                     <div class="form-group mb-2">
                                         <label class="form-label" for="username">Username</label>
                                         <input type="text" class="form-control" id="username" name="username"
                                                placeholder="Enter username" required>
+                                        <small class="text-danger d-none" id="usernameError">Username không được bỏ trống</small>
+                                    </div>
+
+                                    <div class="form-group mb-2">
+                                        <label class="form-label" for="fullName">Full Name</label>
+                                        <input type="text" class="form-control" id="fullName" name="full_name"
+                                               placeholder="Enter full name" required>
+                                        <small class="text-danger d-none" id="fullNameError">Full name không được bỏ trống</small>
+                                    </div>
+
+                                    <div class="form-group mb-2">
+                                        <label class="form-label" for="email">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email"
+                                               placeholder="Enter email" required
+                                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                                               title="Vui lòng nhập đúng định dạng email">
+                                        <small class="text-danger d-none" id="emailError">Email không hợp lệ</small>
+                                    </div>
+
+                                    <div class="form-group mb-2">
+                                        <label class="form-label" for="phoneNumber">Phone Number</label>
+                                        <input type="text" class="form-control" id="phoneNumber" name="phone_number"
+                                               placeholder="Enter phone number" required
+                                               pattern="^[0-9]{10,11}$"
+                                               title="Số điện thoại phải từ 10-11 số">
+                                        <small class="text-danger d-none" id="phoneError">Số điện thoại không hợp lệ</small>
                                     </div>
 
                                     <div class="form-group mb-2">
                                         <label class="form-label" for="password">Password</label>
                                         <input type="password" class="form-control" id="password" name="password"
-                                               placeholder="Enter password" required>
+                                               placeholder="Enter password" required
+                                               pattern=".{8,}"
+                                               title="Mật khẩu phải có ít nhất 8 ký tự"
+                                        >
+                                        <small class="text-danger d-none" id="passwordError">Mật khẩu không hợp lệ</small>
                                     </div>
 
                                     <div class="form-group mb-2">
                                         <label class="form-label" for="confirmPassword">Confirm Password</label>
-                                        <input type="password" class="form-control" id="confirmPassword"
-                                               name="confirmPassword" placeholder="Confirm password" required>
+                                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                                               placeholder="Confirm password" required>
+                                        <small class="text-danger d-none" id="confirmError">Mật khẩu xác nhận không khớp</small>
                                     </div>
 
                                     <!-- Gán role mặc định -->
@@ -70,6 +104,49 @@
                                         </div>
                                     </div>
                                 </form>
+
+                                <script>
+                                    document.getElementById("registerForm").addEventListener("submit", function (e) {
+                                        let valid = true;
+
+                                        const username = document.getElementById("username");
+                                        const fullName = document.getElementById("fullName");
+                                        const email = document.getElementById("email");
+                                        const phone = document.getElementById("phoneNumber");
+                                        const password = document.getElementById("password");
+                                        const confirmPassword = document.getElementById("confirmPassword");
+
+                                        // reset lỗi
+                                        document.querySelectorAll("small.text-danger").forEach(el => el.classList.add("d-none"));
+
+                                        if (!username.value.trim()) {
+                                            document.getElementById("usernameError").classList.remove("d-none");
+                                            valid = false;
+                                        }
+                                        if (!fullName.value.trim()) {
+                                            document.getElementById("fullNameError").classList.remove("d-none");
+                                            valid = false;
+                                        }
+                                        if (!email.checkValidity()) {
+                                            document.getElementById("emailError").classList.remove("d-none");
+                                            valid = false;
+                                        }
+                                        if (!phone.checkValidity()) {
+                                            document.getElementById("phoneError").classList.remove("d-none");
+                                            valid = false;
+                                        }
+                                        if (!password.checkValidity()) {
+                                            document.getElementById("passwordError").classList.remove("d-none");
+                                            valid = false;
+                                        }
+                                        if (password.value !== confirmPassword.value) {
+                                            document.getElementById("confirmError").classList.remove("d-none");
+                                            valid = false;
+                                        }
+
+                                        if (!valid) e.preventDefault();
+                                    });
+                                </script>
 
                                 <div class="text-center">
                                     <p class="text-muted">

@@ -95,7 +95,7 @@ public class ProductController {
         productService.addProduct(product);
 
         // thêm thông báo
-        redirectAttributes.addFlashAttribute("successMessage", "Product added successfully!");
+        redirectAttributes.addFlashAttribute("success", "Product added successfully!");
         return "redirect:/list-product";
 
     }
@@ -120,7 +120,7 @@ public class ProductController {
         productService.updateProduct(id, product);
 
         // thêm thông báo
-        redirectAttributes.addFlashAttribute("successMessage", "Product updated successfully!");
+        redirectAttributes.addFlashAttribute("success", "Product updated successfully!");
         return "redirect:/list-product";
     }
 
@@ -130,7 +130,7 @@ public class ProductController {
         productService.deleteProduct(id);
 
         // thêm thông báo
-        redirectAttributes.addFlashAttribute("successMessage", "Product deleted successfully!");
+        redirectAttributes.addFlashAttribute("success", "Product deleted successfully!");
         return "redirect:/list-product";
     }
 }

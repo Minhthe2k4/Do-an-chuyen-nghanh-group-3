@@ -120,6 +120,13 @@
                         <div class="collapse " id="sidebarDashboards">
                             <ul class="nav flex-column">
 
+                                <!-- Dashboard mới -->
+                                <li class="nav-item">
+                                    <a th:href="@{/admin/home}" class="nav-link">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+
                                 <!-- Items -->
                                 <li class="nav-item">
                                     <a class="nav-link" href="#sidebarItems" data-bs-toggle="collapse" role="button"
@@ -203,14 +210,14 @@
             <div class="row">
                 <div class="col-sm-12">
                     <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
-                        <h4 class="page-title">Products</h4>
+                        <h4 class="page-title">Product details</h4>
                         <div class="">
                             <ol class="breadcrumb mb-0">
                                 <li class="breadcrumb-item"><a href="#">Dastone</a>
                                 </li><!--end nav-item-->
                                 <li class="breadcrumb-item"><a href="#">Ecommerce</a>
                                 </li><!--end nav-item-->
-                                <li class="breadcrumb-item active">Products</li>
+                                <li class="breadcrumb-item active">Product details</li>
                             </ol>
                         </div>
                     </div><!--end page-title-box-->
@@ -294,43 +301,77 @@
                                 </div><!--end col-->
                             </div><!--end row-->
                         </div><!--end card-header-->
-                        <div class="card-body">
-                            <table class="table table-bordered">
+                        <div class="card-body shadow-sm p-4 rounded bg-light">
+                            <table class="table table-bordered align-middle">
                                 <tbody>
                                 <tr>
-                                    <th style="width:150px;">Id:</th>
+                                    <th class="bg-primary text-white" style="width: 180px;">
+                                        <i class="fas fa-hashtag me-2"></i>ID
+                                    </th>
                                     <td th:text="${product.id}"></td>
                                 </tr>
+
                                 <tr>
-                                    <th>Code:</th>
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-barcode me-2"></i>Code
+                                    </th>
                                     <td th:text="${product.item_code}"></td>
                                 </tr>
+
                                 <tr>
-                                    <th>Name:</th>
-                                    <td th:text="${product.item_name}">
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-tag me-2"></i>Name
+                                    </th>
+                                    <td th:text="${product.item_name}"></td>
+                                </tr>
+
+                                <tr>
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-dollar-sign me-2"></i>Price
+                                    </th>
+                                    <td>
+                <span class="text-danger fw-bold"
+                      th:text="${#numbers.formatDecimal(product.item_price, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
                                     </td>
                                 </tr>
+
                                 <tr>
-                                    <th>Price:</th>
-                                    <td th:text="${#numbers.formatDecimal(product.item_price, 0, 'POINT', 0, 'COMMA')} + ' VND'">
-                                        1.500 VND
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-cubes me-2"></i>Stock quantity
+                                    </th>
+                                    <td>
+                <span th:text="${product.stock_quantity}"
+                      th:classappend="${product.stock_quantity > 0} ? 'text-success' : 'text-danger'"></span>
                                     </td>
                                 </tr>
+
                                 <tr>
-                                    <th>Category:</th>
-                                    <td th:text="${product.category.category_name}">Phân bón</td>
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-layer-group me-2"></i>Category
+                                    </th>
+                                    <td th:text="${product.category.category_name}"></td>
                                 </tr>
+
                                 <tr>
-                                    <th>Image:</th>
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-image me-2"></i>Image
+                                    </th>
                                     <td>
                                         <img th:src="@{${product.item_image}}"
-                                             alt="image"
-                                             style="height:80px;" class="rounded">
+                                             alt="Product Image"
+                                             class="rounded shadow-sm border"
+                                             style="height:100px; width: auto;">
                                     </td>
                                 </tr>
+
                                 <tr>
-                                    <th>Description</th>
-                                    <td th:text=${product.item_description}></td>
+                                    <th class="bg-primary text-white">
+                                        <i class="fas fa-align-left me-2"></i>Description
+                                    </th>
+                                    <td>
+                                        <p th:text="${product.item_description}"
+                                           style="text-align: justify; line-height: 1.6;"></p>
+                                    </td>
                                 </tr>
                                 </tbody>
                             </table>

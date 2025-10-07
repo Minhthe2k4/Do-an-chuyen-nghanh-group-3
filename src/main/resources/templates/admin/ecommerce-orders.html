@@ -119,6 +119,14 @@
                         <div class="collapse " id="sidebarDashboards">
                             <ul class="nav flex-column">
 
+                                <!-- Dashboard mới -->
+                                <li class="nav-item">
+                                    <a th:href="@{/admin/home}" class="nav-link">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+
+
                                 <!-- Items -->
                                 <li class="nav-item">
                                     <a class="nav-link" href="#sidebarItems" data-bs-toggle="collapse" role="button"
@@ -226,11 +234,6 @@
                                 <div class="col-auto">
                                     <form class="row g-2">
                                         <div class="col-auto">
-                                            <a class="btn bg-primary-subtle text-primary dropdown-toggle d-flex align-items-center arrow-none"
-                                               data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false"
-                                               aria-expanded="false" data-bs-auto-close="outside">
-                                                <i class="iconoir-filter-alt me-1"></i> Filter
-                                            </a>
                                             <div class="dropdown-menu dropdown-menu-start">
                                                 <div class="p-2">
                                                     <div class="form-check mb-2">
@@ -289,48 +292,91 @@
                                 </div><!--end col-->
                             </div><!--end row-->
                         </div><!--end card-header-->
-                        <div class="card-body">
+
+                        <div class="card-body p-4">
                             <div class="table-responsive">
-                                <table class="table mb-0 checkbox-all" id="datatable_1">
+                                <table class="table table-hover align-middle text-center mb-0" id="datatable_1">
                                     <thead class="table-light">
                                     <tr>
-                                        <th style="width: 16px;">
-                                            <div class="form-check mb-0 ms-n1">
-                                                <input type="checkbox" class="form-check-input" name="select-all"
-                                                       id="select-all">
-                                            </div>
-                                        </th>
-                                        <th>User</th>
-                                        <th>Order items</th>
-                                        <th>Status</th>
-                                        <th>Total amount</th>
-                                        <th class="text-end">Action</th>
+                                        <th><i class="las la-user text-primary me-1"></i> User</th>
+                                        <th><i class="las la-box text-secondary me-1"></i> Order Items</th>
+                                        <th><i class="las la-clipboard-check text-info me-1"></i> Order Status</th>
+                                        <th><i class="las la-shipping-fast text-warning me-1"></i> Shipping</th>
+                                        <th><i class="las la-credit-card text-success me-1"></i> Payment</th>
+                                        <th><i class="las la-map-marker-alt text-danger me-1"></i> Address</th>
+                                        <th><i class="las la-coins text-warning me-1"></i> Total</th>
+                                        <th><i class="las la-cog text-dark me-1"></i> Action</th>
                                     </tr>
                                     </thead>
-                                    <tbody>
-                                    <tr th:each="order: ${orders}">
-                                        <td style="width: 16px;">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="check"
-                                                       id="customCheck1">
-                                            </div>
-                                        </td>
-                                        <td class="ps-0">
-                                            <p class="d-inline-block align-middle mb-0" th:text="${order.username}">
 
-                                                <span class="text-muted font-13"></span>
-                                            </p>
+                                    <tbody>
+                                    <tr th:each="order : ${orders}">
+                                        <!-- User -->
+                                        <td>
+                        <span class="fw-semibold text-dark">
+                            <i class="las la-user-circle text-primary me-1"></i>
+                            <span th:text="${order.username}"></span>
+                        </span>
                                         </td>
-                                        <td th:text="${order.order_items}"></td>
-                                        <td th:text="${order.status}"></td>
-                                        <td th:text="${order.total_amount}"></td>
+
+                                        <!-- Order Items -->
+                                        <td>
+                                            <span th:text="${order.order_items}"></span>
+                                        </td>
+
+                                        <!-- Order Status -->
+                                        <td>
+                        <span th:switch="${order.status}">
+                            <span th:case="0" class="badge bg-secondary">Đang chờ</span>
+                            <span th:case="1" class="badge bg-warning text-dark">Đang xử lý</span>
+                            <span th:case="2" class="badge bg-success">Hoàn tất</span>
+                            <span th:case="3" class="badge bg-danger">Đã hủy</span>
+                        </span>
+                                        </td>
+
+                                        <!-- Shipping Status -->
+                                        <td>
+                        <span th:switch="${order.shipping_status}">
+                            <span th:case="0" class="badge bg-secondary">Chưa giao</span>
+                            <span th:case="1" class="badge bg-warning text-dark">Đang giao</span>
+                            <span th:case="2" class="badge bg-success">Giao thành công</span>
+                            <span th:case="3" class="badge bg-danger">Giao thất bại</span>
+                        </span>
+                                        </td>
+
+                                        <!-- Payment Method -->
+                                        <td>
+                        <span th:classappend="
+                            ${order.payment_method == 'COD'} ? 'badge bg-success text-white' :
+                            (${order.payment_method == 'Vnpay'} ? 'badge bg-primary text-white' :
+                            (${order.payment_method == 'SPayLater'} ? 'badge bg-warning text-dark' :
+                            'badge bg-secondary text-white'))"
+                              th:text="${order.payment_method != null ? order.payment_method : 'Chưa có'}">
+                        </span>
+                                        </td>
+
+                                        <!-- Address -->
+                                        <td>
+                                            <i class="las la-map-pin text-danger me-1"></i>
+                                            <span th:text="${order.address}"></span>
+                                        </td>
+
+                                        <!-- Total Amount -->
+                                        <td>
+                        <span class="fw-bold text-success">
+                            <i class="las la-wallet me-1"></i>
+                            <span th:text="${#numbers.formatDecimal(order.total_amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></span>
+                        </span>
+                                        </td>
+
+                                        <!-- Action -->
                                         <td class="text-end">
-                                            <a><i class="las la-pen text-secondary fs-18"></i></a>
-                                            <a><i class="las la-eye text-secondary fs-18"></i></a>
+                                            <a href="#" class="text-decoration-none me-2" title="Edit">
+                                                <i class="las la-pen text-primary fs-18"></i>
+                                            </a>
                                         </td>
                                     </tr>
                                     </tbody>
-
                                 </table>
                             </div>
                         </div>

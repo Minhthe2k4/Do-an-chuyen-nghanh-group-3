@@ -116,7 +116,14 @@
                         </a>
                         <div class="collapse " id="sidebarDashboards">
                             <ul class="nav flex-column">
-                                <!--end nav-item-->
+
+                                <!-- Dashboard mới -->
+                                <li class="nav-item">
+                                    <a th:href="@{/admin/home}" class="nav-link">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+
                                 <!-- Items -->
                                 <li class="nav-item">
                                     <a class="nav-link" href="#sidebarItems" data-bs-toggle="collapse" role="button"
@@ -261,34 +268,97 @@
         <!--end Rightbar-->
         <!--Start Footer-->
 
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <span th:text="${error}"></span>
+        </div>
+
         <div class="container mt-4">
             <div class="row">
                 <div class="col-lg-5 col-md-6"> <!-- form nhỏ hơn, nằm bên trái -->
-                    <form th:action="@{/add-user}" method="post" th:object="${user}">
+                    <form th:action="@{/add-user}" method="post" th:object="${user}" novalidate>
                         <div class="card-body">
+
                             <div class="mb-3 row">
-                                <label for="example-name-input"
-                                       class="col-sm-3 col-form-label text-end">Username</label>
+                                <label for="username" class="col-sm-3 col-form-label text-end">Username</label>
                                 <div class="col-sm-9">
-                                    <input class="form-control" type="text" value="" id="example-name-input"
-                                           th:field="*{username}">
+                                    <input class="form-control" type="text" id="username" th:field="*{username}"
+                                           required minlength="2" maxlength="50">
+                                    <div class="invalid-feedback">
+                                        Username không được bỏ trống (2-50 ký tự).
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="mb-3 row">
-                                <label for="example-password-input"
-                                       class="col-sm-3 col-form-label text-end">Password</label>
+                                <label for="password" class="col-sm-3 col-form-label text-end">Password</label>
                                 <div class="col-sm-9">
-                                    <input class="form-control" type="text" value="" id="example-password-input"
-                                           th:field="*{password}">
+                                    <input class="form-control" type="password" id="password" th:field="*{password}"
+                                           required minlength="8"
+                                           pattern=".{8,}"
+                                           title="Mật khẩu ít nhất 8 kí tự">
+                                    <div class="invalid-feedback">
+                                        Mật khẩu phải ít nhất 8 ký tự, bao gồm chữ và số.
+                                    </div>
                                 </div>
                             </div>
+
+                            <div class="mb-3 row">
+                                <label for="full_name" class="col-sm-3 col-form-label text-end">Full name</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" type="text" id="full_name" th:field="*{full_name}"
+                                           required minlength="2" maxlength="100">
+                                    <div class="invalid-feedback">
+                                        Họ và tên không được bỏ trống (2-100 ký tự).
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 row">
+                                <label for="email" class="col-sm-3 col-form-label text-end">Email</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" type="email" id="email" th:field="*{email}" required>
+                                    <div class="invalid-feedback">
+                                        Vui lòng nhập email hợp lệ.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 row">
+                                <label for="phone_number" class="col-sm-3 col-form-label text-end">Phone number</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" type="tel" id="phone_number" th:field="*{phone_number}"
+                                           required pattern="^\d{9,15}$" title="Số điện thoại từ 9-15 chữ số">
+                                    <div class="invalid-feedback">
+                                        Vui lòng nhập số điện thoại hợp lệ (9-15 chữ số).
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Nút Create ở góc phải -->
                             <div class="d-flex justify-content-end mt-3">
                                 <button type="submit" class="btn btn-primary">Create</button>
                             </div>
+
                         </div>
                     </form>
+
+                    <script>
+                        // Bootstrap validation
+                        (function () {
+                            'use strict'
+                            const forms = document.querySelectorAll('form')
+                            Array.from(forms).forEach(form => {
+                                form.addEventListener('submit', event => {
+                                    if (!form.checkValidity()) {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                    }
+                                    form.classList.add('was-validated')
+                                }, false)
+                            })
+                        })()
+                    </script>
+
                 </div>
             </div>
         </div>

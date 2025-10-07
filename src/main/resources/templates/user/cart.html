@@ -226,67 +226,78 @@
             <!--end Rightbar-->
             <!--Start Footer-->
 
+            <div th:if="${error}" class="alert alert-danger mt-3" th:text="${error}"></div>
+            <div th:if="${success}" class="alert alert-success mt-3" th:text="${success}"></div>
+
+
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table mb-0 checkbox-all" id="datatable_1">
+                    <table class="table table-hover align-middle text-center" id="datatable_1">
                         <thead class="table-light">
                         <tr>
-                            <th style="width: 16px;">
-                                <div class="form-check mb-0 ms-n1">
-                                    <input type="checkbox" class="form-check-input" name="select-all" id="select-all">
-                                </div>
-                            </th>
-                            <th class="ps-0">Product</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Total</th>
-                            <th class="text-end">Action</th>
+                            <th class="text-start">🛍️ Product</th>
+                            <th>💰 Price</th>
+                            <th>🔢 Quantity</th>
+                            <th>📦 Total</th>
+                            <th>⚙️ Action</th>
                         </tr>
                         </thead>
                         <tbody>
                         <!-- Lặp qua từng CartItem -->
                         <tr th:each="item : ${cart.cartItem}">
-                            <td>
-                                <div class="form-check mb-0 ms-n1">
-                                    <input type="checkbox" class="form-check-input" name="selectedItems"
-                                           th:value="${item.id}">
-                                </div>
-                            </td>
-                            <td class="ps-0">
+                            <!-- Product -->
+                            <td class="text-start">
                                 <div class="d-flex align-items-center">
                                     <img th:src="${item.product.item_image}"
                                          alt="Product"
-                                         class="me-2"
-                                         style="width:60px; height:60px; object-fit:cover;">
+                                         class="me-3 rounded-3 shadow-sm"
+                                         style="width:70px; height:70px; object-fit:cover;">
 
                                     <div>
-                                        <h6 class="mb-0" th:text="${item.product.item_name}"></h6>
-                                        <small class="text-muted">
+                                        <h6 class="mb-1 fw-semibold text-primary"
+                                            th:text="${item.product.item_name}"></h6>
+                                        <small class="text-muted d-block">
                                             Category:
-                                            <span th:text="${item.product.category.category_name}"></span>
+                                            <span th:text="${item.product.category.category_name}"
+                                                  class="fw-medium text-dark"></span>
                                         </small>
                                     </div>
                                 </div>
                             </td>
-                            <td th:text="${#numbers.formatInteger(item.product.item_price, 0, 'POINT')} + ' VND'"></td>
+
+                            <!-- Price -->
+                            <td class="fw-bold text-danger"
+                                th:text="${#numbers.formatInteger(item.product.item_price, 0, 'COMMA')} + ' ₫'"></td>
+
+                            <!-- Quantity -->
                             <td>
-                                <form th:action="@{/user/update}" method="post" class="d-flex">
+                                <form th:action="@{/user/update}" method="post" class="d-flex justify-content-center align-items-center">
                                     <input type="hidden" name="itemId" th:value="${item.id}">
-                                    <input type="number" name="quantity" class="form-control form-control-sm w-50"
+                                    <input type="number" name="quantity"
+                                           class="form-control form-control-sm text-center"
+                                           style="width:70px;"
                                            th:value="${item.quantity}" min="1">
-                                    <button type="submit" class="btn btn-sm btn-primary ms-2">Update</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary ms-2">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
                                 </form>
                             </td>
-                            <td th:text="${#numbers.formatInteger(item.product.item_price * item.quantity, 0, 'POINT')} + ' VND'"></td>
-                            <td class="text-end">
-                                <a th:href="@{/user/remove/{id}(id=${item.id})}" class="btn btn-sm btn-outline-danger">
-                                    <i class="fas fa-times"></i>
+
+                            <!-- Total -->
+                            <td class="fw-bold text-success"
+                                th:text="${#numbers.formatInteger(item.product.item_price * item.quantity, 0, 'COMMA')} + ' ₫'"></td>
+
+                            <!-- Action -->
+                            <td>
+                                <a th:href="@{/user/remove/{id}(id=${item.id})}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   title="Remove item">
+                                    <i class="fas fa-trash-alt"></i>
                                 </a>
                             </td>
                         </tr>
                         </tbody>
                     </table>
-
                     <!-- Total + Actions -->
                     <div class="container mt-4">
                         <div class="row">

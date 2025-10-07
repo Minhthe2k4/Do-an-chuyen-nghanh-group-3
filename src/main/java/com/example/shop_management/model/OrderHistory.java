@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -24,7 +25,7 @@ public class OrderHistory {
 
     @Column(columnDefinition = "TEXT")
     private String order_items;
-
+    private Integer shipping_status;
     private Integer status;
     private BigDecimal total_amount;
     private LocalDateTime created_at;
@@ -48,5 +49,9 @@ public class OrderHistory {
     @OneToMany(mappedBy = "orderhistory", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Payment> payment;
 
+
+    @ManyToOne
+    @JoinColumn(name = "address_id", nullable = false)
+    private Address address;
 
 }

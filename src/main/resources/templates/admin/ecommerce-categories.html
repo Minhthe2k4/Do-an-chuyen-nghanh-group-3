@@ -115,6 +115,13 @@
                         <div class="collapse " id="sidebarDashboards">
                             <ul class="nav flex-column">
 
+                                <!-- Dashboard mới -->
+                                <li class="nav-item">
+                                    <a th:href="@{/admin/home}" class="nav-link">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
+
                                 <li class="nav-item">
                                     <a class="nav-link" href="#sidebarItems" data-bs-toggle="collapse" role="button"
                                        aria-expanded="false" aria-controls="sidebarItems">
@@ -223,11 +230,6 @@
                                 <div class="col-auto">
                                     <form class="row g-2">
                                         <div class="col-auto">
-                                            <a class="btn bg-primary-subtle text-primary dropdown-toggle d-flex align-items-center arrow-none"
-                                               data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false"
-                                               aria-expanded="false" data-bs-auto-close="outside">
-                                                <i class="iconoir-filter-alt me-1"></i> Filter
-                                            </a>
                                             <div class="dropdown-menu dropdown-menu-start">
                                                 <div class="p-2">
                                                     <div class="form-check mb-2">
@@ -293,50 +295,65 @@
                             </div><!--end row-->
                         </div><!--end card-header-->
 
-                        <div th:if="${successMessage}" class="alert alert-success" role="alert">
-                            <span th:text="${successMessage}"></span>
+                        <div th:if="${success}" class="alert alert-success" role="alert">
+                            <span th:text="${success}"></span>
+                        </div>
+
+                        <div th:if="${error}" class="alert alert-danger" role="alert">
+                            <span th:text="${error}"></span>
                         </div>
 
 
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table mb-0 checkbox-all" id="datatable_1">
+                                <table class="table table-hover align-middle text-center" id="datatable_1">
                                     <thead class="table-light">
                                     <tr>
-                                        <th style="width: 16px;">
-                                            <div class="form-check mb-0 ms-n1">
-                                                <input type="checkbox" class="form-check-input" name="select-all"
-                                                       id="select-all">
-                                            </div>
-                                        </th>
-                                        <th>Code</th>
-                                        <th class="ps-0">Category name</th>
-                                        <th class="text-end">Action</th>
+                                        <th style="width: 80px;">🆔 Code</th>
+                                        <th class="text-start ps-3">📁 Category Name</th>
+                                        <th style="width: 120px;">⚙️ Action</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    <tr th:each="category: ${categories}">
-                                        <td style="width: 16px;">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="check"
-                                                       id="customCheck1">
-                                            </div>
+                                    <tr th:each="category : ${categories}">
+                                        <!-- Code -->
+                                        <td th:text="${category.id}" class="fw-semibold text-secondary"></td>
+
+                                        <!-- Category name -->
+                                        <td class="text-start ps-3">
+                                            <i class="fas fa-folder-open text-warning me-2"></i>
+                                            <span th:text="${category.category_name}"
+                                                  class="fw-medium text-dark"></span>
                                         </td>
-                                        <td th:text="${category.id}"></td>
-                                        <td class="ps-0" th:text="${category.category_name}">
-                                        </td>
-                                        <td class="text-end">
-                                            <a th:href="@{'/edit-category/' + ${category.id}}"><i
-                                                    class="las la-pen text-secondary fs-18"></i></a>
+
+                                        <!-- Action buttons -->
+                                        <td>
+                                            <a th:href="@{'/edit-category/' + ${category.id}}"
+                                               class="btn btn-sm btn-outline-primary me-1"
+                                               title="Edit category">
+                                                <i class="fas fa-pen"></i>
+                                            </a>
                                             <a th:href="@{'/delete-category/' + ${category.id}}"
-                                               onclick="return confirm('Are you sure you want to delete this category?')"><i
-                                                    class="las la-trash-alt text-secondary fs-18"></i></a>
+                                               class="btn btn-sm btn-outline-danger"
+                                               onclick="return confirm('Are you sure you want to delete this category?')"
+                                               title="Delete category">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Nếu không có danh mục nào -->
+                                    <tr th:if="${#lists.isEmpty(categories)}">
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            <i class="fas fa-info-circle me-2"></i> No categories found.
                                         </td>
                                     </tr>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
+
+
                     </div>
                 </div> <!-- end col -->
             </div> <!-- end row -->

@@ -63,14 +63,20 @@ public class CategoryController {
     //Xử lý thêm sản phẩm
     @PostMapping("/add-category")
     public String addCategory(@ModelAttribute Category category, RedirectAttributes redirectAttributes) {
+        // Kiểm tra trùng tên
+        if (categoryService.categoryExists(category.getCategory_name())) {
+            redirectAttributes.addFlashAttribute("error", "Category name already exists!");
+            return "redirect:/list-category";
+        }
+
         category.setCreatedAt(LocalDateTime.now());
         category.setUpdatedAt(LocalDateTime.now());
         categoryService.addCategory(category);
 
-        // Thông báo thành công
-        redirectAttributes.addFlashAttribute("successMessage", "Category added successfully!");
+        redirectAttributes.addFlashAttribute("success", "Category added successfully!");
         return "redirect:/list-category";
     }
+
 
     @GetMapping("/edit-category/{id}")
     public String showEditForm(@PathVariable Long id, Model model, Principal principal) {
@@ -92,7 +98,7 @@ public class CategoryController {
         categoryService.updateCategory(id, category);
 
         // Thông báo thành công
-        redirectAttributes.addFlashAttribute("successMessage", "Category updated successfully!");
+        redirectAttributes.addFlashAttribute("success", "Category updated successfully!");
         return "redirect:/list-category";
     }
 
@@ -102,7 +108,7 @@ public class CategoryController {
         categoryService.deleteCategory(id);
 
         // Thông báo thành công
-        redirectAttributes.addFlashAttribute("successMessage", "Category deleted successfully!");
+        redirectAttributes.addFlashAttribute("success", "Category deleted successfully!");
         return "redirect:/list-category";
     }
 }

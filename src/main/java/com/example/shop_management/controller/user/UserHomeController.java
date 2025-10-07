@@ -1,8 +1,10 @@
 package com.example.shop_management.controller.user;
 
 import com.example.shop_management.DTO.ProductDTO;
+import com.example.shop_management.model.Category;
 import com.example.shop_management.model.Product;
 import com.example.shop_management.model.User;
+import com.example.shop_management.repository.CategoryRepository;
 import com.example.shop_management.repository.ProductRepository;
 import com.example.shop_management.repository.UserRepository;
 import com.example.shop_management.service.CartService;
@@ -15,7 +17,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/user")
@@ -25,30 +29,64 @@ public class UserHomeController {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
     private final CartService cartService;
     private final UserRepository userRepository;
 
     @GetMapping("/home")
-    public String home(Model model, Principal principal) {
+    public String home(@RequestParam(value = "category", required = false) Integer categoryId, @RequestParam(value = "keyword", required = false) String keyword, Model model, Principal principal) {
         String username = principal.getName();
-        List<ProductDTO> products = productRepository.getProductInfo();
-
         User users = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
+
+        //Loc san pham theo category
+        List<Category> categories = categoryRepository.findAll();
+        List<Product> products;
+
+        if (categoryId != null) {
+            products = productRepository.findByCategoryId(categoryId);
+
+            //Tim san pham theo ten san pham
+        } else if (keyword != null) {
+            products = productRepository.searchByName(keyword);
+        } else {
+            products = productRepository.findAll();
+        }
+
+
+        //Tim kiem san pham theo ten san pham
+
+
+        model.addAttribute("categories", categories);
+        model.addAttribute("products", products);
+        model.addAttribute("selectedCategory", categoryId);
         model.addAttribute("users", users);
-        model.addAttribute("product", products);
+
         return "user/index";
     }
 
-    @GetMapping("/list-product")
-    public String showProductInfo(Model model, Principal principal) {
-        List<ProductDTO> products = productRepository.getProductInfo();
-        model.addAttribute("product", products);
+        @GetMapping("/list-product")
+    public String showProductInfo(@RequestParam(value = "category", required = false) Integer categoryId, Model model, Principal principal) {
         String username = principal.getName();
-
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+            List<Category> categories = categoryRepository.findAll();
+            List<Product> products;
+
+            if (categoryId != null) {
+                products = productRepository.findByCategoryId(categoryId);
+            } else {
+                products = productRepository.findAll();
+            }
+
+            model.addAttribute("categories", categories);
+            model.addAttribute("products", products);
+            model.addAttribute("selectedCategory", categoryId);
+
 
         model.addAttribute("users", user);
         return "user/index";
@@ -73,7 +111,6 @@ public class UserHomeController {
 
     }
 
-
     @PostMapping("/add-to-cart")
     public String addToCart(
             @RequestParam("itemId") Long itemId,
@@ -81,18 +118,21 @@ public class UserHomeController {
             Principal principal,
             RedirectAttributes redirectAttributes) {
 
-        // Lấy user từ login
         String username = principal.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Thêm vào giỏ
-        cartService.addItemToCart(user.getId(), itemId, quantity);
+        try {
+            // 🔹 Service chỉ xử lý logic thêm vào giỏ
+            cartService.addItemToCart(user.getId(), itemId, quantity);
 
-        // Thêm flash attribute de tao thong bao cho html
-        redirectAttributes.addFlashAttribute("successMessage", "Added to cart successfully");
+            redirectAttributes.addFlashAttribute("success", "Added to cart successfully!");
 
-        // Redirect về trang danh sách
+        } catch (RuntimeException e) {
+            // 🔹 Nếu service throw lỗi (ví dụ hết hàng)
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+
         return "redirect:/user/list-product";
     }
 

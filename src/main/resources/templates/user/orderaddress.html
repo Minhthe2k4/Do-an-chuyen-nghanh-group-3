@@ -228,111 +228,150 @@
             <!--end Rightbar-->
             <!--Start Footer-->
 
-            <div class="row g-4">
-                <!-- ORDER SUMMARY -->
-                <div class="col-lg-8">
-                    <h5 class="text-primary mb-3">
-                        <i class="fas fa-receipt me-2"></i> Order Summary
-                    </h5>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle border">
-                            <thead class="table-primary text-center">
-                            <tr>
-                                <th><i class="fas fa-box me-1"></i>Product</th>
-                                <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
-                                <th><i class="fas fa-coins me-1"></i>Total</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <!-- Lặp qua cartItem -->
-                            <tr th:each="item : ${cart.cartItem}">
-                                <td class="d-flex align-items-center">
-                                    <img th:src="@{${item.product.item_image}}"
-                                         alt="Product"
-                                         class="rounded shadow-sm border me-3"
-                                         style="width: 65px; height: 65px; object-fit: cover;">
-                                    <div>
-                                        <span class="fw-semibold d-block" th:text="${item.product.item_name}"></span>
-                                        <small class="text-muted"
-                                               th:text="${#numbers.formatDecimal(item.product.item_price, 0, 'COMMA', 0, 'POINT')} + ' đ'"></small>
+            <div class="container mt-4">
+                <div class="row">
+                    <div class="col-lg-6 col-md-8 mx-auto">
+                        <div class="card">
+                            <div class="card-header bg-soft-primary">
+                                <h5 class="mb-0">Đặt hàng</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="checkoutForm" class="needs-validation" method="post" novalidate>
+                                    <!-- Tỉnh -->
+                                    <div class="mb-3 row">
+                                        <label class="col-sm-4 col-form-label text-end">Province/ City</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" id="province" name="province_name"
+                                                   placeholder="Type province or city" required minlength="2"
+                                                   maxlength="100">
+                                            <div class="invalid-feedback">
+                                                Vui lòng nhập tên tỉnh hợp lệ (2–100 ký tự)
+                                            </div>
+                                        </div>
                                     </div>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-secondary" th:text="${item.quantity}"></span>
-                                </td>
-                                <td class="text-end text-danger fw-bold"
-                                    th:text="${#numbers.formatDecimal(item.product.item_price * item.quantity, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
-                            </tr>
 
-                            <!-- Subtotal -->
-                            <tr class="border-top">
-                                <th colspan="2" class="text-end">Subtotal</th>
-                                <td class="text-end fw-semibold text-primary"
-                                    th:text="${#numbers.formatDecimal(subtotal, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
-                            </tr>
+                                    <!-- Huyện -->
+                                    <div class="mb-3 row">
+                                        <label class="col-sm-4 col-form-label text-end">District</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" id="district" name="district_name"
+                                                   placeholder="Type district" required minlength="2"
+                                                   maxlength="100">
+                                            <div class="invalid-feedback">
+                                                Vui lòng nhập tên huyện hợp lệ (2–100 ký tự)
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <!-- Total -->
-                            <tr class="table-info">
-                                <th colspan="2" class="text-end fs-6">Total</th>
-                                <td class="text-end fs-5 fw-bold text-success"
-                                    th:text="${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                    <!-- Xã -->
+                                    <div class="mb-3 row">
+                                        <label class="col-sm-4 col-form-label text-end">Ward</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" id="ward" name="ward_name"
+                                                   placeholder="Type ward" required minlength="2"
+                                                   maxlength="100">
+                                            <div class="invalid-feedback">
+                                                Vui lòng nhập tên xã hợp lệ (2–100 ký tự)
+                                            </div>
+                                        </div>
+                                    </div>
 
-                <!-- BILLING DETAILS -->
-                <div class="col-lg-4">
-                    <div class="card shadow-sm border-0">
-                        <div class="card-body text-center">
-                            <h5 class="text-primary mb-3">
-                                <i class="fas fa-credit-card me-2"></i> Billing Details
-                            </h5>
+                                    <!-- Địa chỉ cụ thể -->
+                                    <div class="mb-3 row">
+                                        <label class="col-sm-4 col-form-label text-end">Specific address</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" id="addressLine" name="addressLine"
+                                                   placeholder="VD: 123 Lý Thường Kiệt" required minlength="5"
+                                                   maxlength="255">
+                                            <div class="invalid-feedback">
+                                                Địa chỉ phải có ít nhất 5 ký tự
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <p class="text-muted mb-4">
-                                Please check the order information carefully before paying
-                            </p>
+                                    <!-- Mã bưu điện -->
+                                    <div class="mb-3 row">
+                                        <label class="col-sm-4 col-form-label text-end">Postcode</label>
+                                        <div class="col-sm-8">
+                                            <input type="text" class="form-control" id="postalCode" name="postalCode"
+                                                   placeholder="VD: 700000" required pattern="^[0-9]{5,6}$">
+                                            <div class="invalid-feedback">
+                                                Mã bưu điện phải gồm 5–6 chữ số
+                                            </div>
+                                        </div>
+                                    </div>
 
-                            <a th:href="@{/user/checkout}" class="btn btn-success w-100 py-2 fw-semibold">
-                                <i class="fas fa-arrow-right me-2"></i> Pay
-                            </a>
+                                    <!-- ✅ Thêm dòng này -->
+                                    <input type="hidden" name="total" th:value="${total}">
+
+                                    <!-- Nút thanh toán -->
+                                    <div class="d-flex justify-content-between mt-4 flex-wrap gap-2">
+
+                                        <!-- COD -->
+                                        <button type="submit"
+                                                class="btn btn-outline-primary"
+                                                formaction="/user/cod">
+                                            <i class="fas fa-box me-2"></i> COD(Direct payment)
+                                        </button>
+
+                                        <!-- VNPay -->
+                                        <button type="submit"
+                                                class="btn btn-outline-success"
+                                                formaction="/user/pay"
+                                                formmethod="get">
+                                            <i class="fas fa-credit-card me-2"></i> VNPay
+                                        </button>
+
+                                        <!-- SpayLater -->
+                                        <div>
+                                            <select id="installmentPeriod" name="period" class="form-select mb-2"
+                                                    required>
+                                                <option selected disabled value="">Choose period</option>
+                                                <option value="1">1 month</option>
+                                                <option value="3">3 month</option>
+                                                <option value="6">6 month</option>
+                                            </select>
+                                            <button type="submit"
+                                                    class="btn btn-outline-info w-100"
+                                                    formaction="/user/spay-later/checkout"
+                                                    formmethod="get">
+                                                <i class="fas fa-clock me-2"></i> SpayLater
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div> <!-- end col -->
 
 
-<footer class="footer text-center text-sm-start d-print-none">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card mb-0 border-bottom-0 rounded-bottom-0">
-                    <div class="card-body">
-                        <p class="text-muted mb-0">
-                            ©
-                            <script> document.write(new Date().getFullYear()) </script>
-                            Dastone
-                            <span class="text-muted d-none d-sm-inline-block float-end">
+            <footer class="footer text-center text-sm-start d-print-none">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-0 border-bottom-0 rounded-bottom-0">
+                                <div class="card-body">
+                                    <p class="text-muted mb-0">
+                                        ©
+                                        <script> document.write(new Date().getFullYear()) </script>
+                                        Dastone
+                                        <span class="text-muted d-none d-sm-inline-block float-end">
                                     Design with
                                     <i class="iconoir-heart-solid text-danger align-middle"></i>
                                     by Group 3</span>
-                        </p>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </footer>
         </div>
-    </div>
-</footer>
 
-<!--end footer-->
-</div>
-<!-- end page content -->
-</div>
+    </div>
+</div> <!-- end col -->
 <!-- end page-wrapper -->
 
 <!-- Javascript  -->
@@ -340,11 +379,47 @@
 
 <script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="/libs/simplebar/simplebar.min.js"></script>
-
 <script src="/libs/apexcharts/apexcharts.min.js"></script>
 <script src="../../../apexcharts.com/samples/assets/stock-prices.js"></script>
 <script src="/js/pages/index.init.js"></script>
 <script src="/js/app.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("checkoutForm");
+        const installmentSelect = document.getElementById("installmentPeriod");
+
+        form.addEventListener("submit", function (e) {
+            const submitter = e.submitter;
+
+            // Nếu là nút SpayLater
+            if (submitter && submitter.getAttribute("formaction") === "/user/spay-later/checkout") {
+                installmentSelect.setAttribute("required", "true"); // bật bắt buộc
+                if (!installmentSelect.value) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    installmentSelect.classList.add("is-invalid");
+                    alert("Vui lòng chọn kỳ hạn trả góp trước khi thanh toán SpayLater!");
+                    return;
+                } else {
+                    installmentSelect.classList.remove("is-invalid");
+                }
+            } else {
+                // Nếu là COD hoặc VNPay → bỏ required để không bị bắt lỗi
+                installmentSelect.removeAttribute("required");
+                installmentSelect.classList.remove("is-invalid");
+            }
+
+            // Validate các trường khác
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                form.classList.add("was-validated");
+            }
+        });
+    });
+</script>
+
+
 </body>
 <!--end body-->
 

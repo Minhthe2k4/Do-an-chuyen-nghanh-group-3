@@ -22,6 +22,7 @@ public class Product {
     private Long item_price;
     private String item_image;
     private String item_description;
+    private Long stock_quantity;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

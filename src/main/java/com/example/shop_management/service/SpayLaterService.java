@@ -5,13 +5,20 @@ import com.example.shop_management.model.Installment;
 import com.example.shop_management.model.Payment;
 import com.example.shop_management.repository.InstallmentRepository;
 import com.example.shop_management.repository.PaymentRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,32 +34,32 @@ public class SpayLaterService {
      */
     public void createInstallments(Payment payment, int installmentCount) {
         BigDecimal totalAmount = payment.getOrderhistory().getTotal_amount();
-
-        // Phí chuyển đổi 2.95% tính trên tổng đơn
         BigDecimal conversionFee = totalAmount.multiply(BigDecimal.valueOf(CONVERSION_FEE_RATE));
 
-        // Số tiền chia đều theo kỳ
         BigDecimal baseInstallment = totalAmount.divide(
                 BigDecimal.valueOf(installmentCount),
-                0,
-                RoundingMode.DOWN
+                2,
+                RoundingMode.HALF_UP
         );
 
-        // Phần dư để dồn vào kỳ cuối
         BigDecimal accumulated = baseInstallment.multiply(BigDecimal.valueOf(installmentCount));
         BigDecimal remainder = totalAmount.subtract(accumulated);
 
-        // Chia đều phí chuyển đổi vào từng kỳ
         BigDecimal feePerInstallment = conversionFee.divide(
                 BigDecimal.valueOf(installmentCount),
-                0,
+                2,
                 RoundingMode.HALF_UP
         );
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime dueDate = now.getDayOfMonth() >= 24
-                ? LocalDateTime.of(now.plusMonths(2).getYear(), now.plusMonths(2).getMonth(), 10, 23, 59)
-                : LocalDateTime.of(now.plusMonths(1).getYear(), now.plusMonths(1).getMonth(), 10, 23, 59);
+        LocalDate baseDate = now.getDayOfMonth() >= 24
+                ? now.toLocalDate().plusMonths(2)
+                : now.toLocalDate().plusMonths(1);
+
+        LocalDate safeDate = baseDate.withDayOfMonth(Math.min(10, baseDate.lengthOfMonth()));
+        LocalDateTime dueDate = safeDate.atTime(23, 59);
+
+        List<Installment> installments = new ArrayList<>();
 
         for (int i = 1; i <= installmentCount; i++) {
             Installment installment = new Installment();
@@ -60,42 +67,57 @@ public class SpayLaterService {
             installment.setInstallment_no((long) i);
 
             BigDecimal amount = baseInstallment.add(feePerInstallment);
-
-            // Nếu là kỳ cuối thì cộng remainder
             if (i == installmentCount && remainder.compareTo(BigDecimal.ZERO) > 0) {
                 amount = amount.add(remainder);
             }
 
-            installment.setAmount(amount);
-            installment.setLate_fee(BigDecimal.ZERO); // chưa tính phí trễ
+            installment.setAmount(amount.setScale(2, RoundingMode.HALF_UP));
+            installment.setLate_fee(BigDecimal.ZERO);
             installment.setDue_date(dueDate);
 
-            installmentRepo.save(installment);
+            installments.add(installment);
             dueDate = dueDate.plusMonths(1);
         }
 
-        payment.setStatus(PaymentStatus.fromCode(0)); // PENDING
+        installmentRepo.saveAll(installments);
+        payment.setStatus(PaymentStatus.PENDING);
         paymentRepo.save(payment);
     }
-
     /**
      * Áp dụng phí trễ hạn: ghi nhận 30k vào kỳ tiếp theo
      */
+    @Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Ho_Chi_Minh")
     public void applyLateFeeForOverdueInstallments() {
-        LocalDateTime today = LocalDateTime.now();
         List<Installment> installments = installmentRepo.findAll();
 
-        for (int i = 0; i < installments.size(); i++) {
-            Installment current = installments.get(i);
+        Map<Long, List<Installment>> groupedByPayment = installments.stream()
+                .collect(Collectors.groupingBy(i -> i.getPayment().getId()));
 
-            if (current.getDue_date().isBefore(today) && !current.isPaid()) {
-                // Nếu chưa trả, cộng phí trễ hạn vào kỳ tiếp theo (nếu có)
-                if (i + 1 < installments.size()) {
-                    Installment next = installments.get(i + 1);
-                    next.setLate_fee(next.getLate_fee().add(BigDecimal.valueOf(LATE_FEE)));
-                    installmentRepo.save(next);
+        for (Map.Entry<Long, List<Installment>> entry : groupedByPayment.entrySet()) {
+            List<Installment> paymentInstallments = entry.getValue().stream()
+                    .sorted(Comparator.comparing(Installment::getDue_date))
+                    .toList();
+
+            for (int i = 0; i < paymentInstallments.size(); i++) {
+                Installment current = paymentInstallments.get(i);
+
+                // kiểm tra đủ điều kiện: chưa trả và đến hạn hoặc quá hạn
+                if (!current.isPaid() && !current.getDue_date().isAfter(LocalDateTime.now())) {
+                    BigDecimal fee = BigDecimal.valueOf(LATE_FEE);
+
+                    if (i + 1 < paymentInstallments.size()) {
+                        Installment next = paymentInstallments.get(i + 1);
+                        BigDecimal newLateFee = next.getLate_fee() == null ? fee : next.getLate_fee().add(fee);
+                        next.setLate_fee(newLateFee);
+                        installmentRepo.save(next);
+                    } else {
+                        BigDecimal newLateFee = current.getLate_fee() == null ? fee : current.getLate_fee().add(fee);
+                        current.setLate_fee(newLateFee);
+                        installmentRepo.save(current);
+                    }
                 }
             }
         }
     }
+
 }

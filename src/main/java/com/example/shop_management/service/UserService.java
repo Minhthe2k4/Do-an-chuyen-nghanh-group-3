@@ -24,8 +24,12 @@ public class UserService {
             return false; // Username đã tồn tại
         }
 
+        user.setUsername(user.getUsername());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRoles("USER"); // mặc định
+        user.setEmail(user.getEmail());
+        user.setPhone_number(user.getPhone_number());
+        user.setFull_name(user.getFull_name());
         user.setStatus(1);
         user.setCredit_limit(BigDecimal.valueOf(10000000L));
         user.setCreatedAt(LocalDateTime.now());
@@ -44,12 +48,19 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Product not found with Id" + id));
     }
 
+    public boolean userExistsByUsername(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
     public User updateUser(Long id, User updateUser) {
         User existingUser = getUserById(id);
         existingUser.setUsername(updateUser.getUsername());
-        existingUser.setPassword(updateUser.getPassword());
+        existingUser.setPassword(passwordEncoder.encode(updateUser.getPassword()));
         existingUser.setRoles(updateUser.getRoles());
         existingUser.setStatus(updateUser.getStatus());
+        existingUser.setFull_name(updateUser.getFull_name());
+        existingUser.setEmail(updateUser.getEmail());
+        existingUser.setPhone_number(updateUser.getPhone_number());
         existingUser.setCredit_limit(updateUser.getCredit_limit());
         existingUser.setCreatedAt(LocalDateTime.now());
         existingUser.setUpdatedAt(LocalDateTime.now());

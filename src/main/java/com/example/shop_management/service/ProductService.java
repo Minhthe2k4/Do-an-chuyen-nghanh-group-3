@@ -35,6 +35,7 @@ public class ProductService {
         existingProduct.setCategory(updateProduct.getCategory());
         existingProduct.setItem_price(updateProduct.getItem_price());
         existingProduct.setItem_image(updateProduct.getItem_image());
+        existingProduct.setStock_quantity(updateProduct.getStock_quantity());
         existingProduct.setItem_description(updateProduct.getItem_description());
         existingProduct.setCreatedAt(LocalDateTime.now());
         existingProduct.setUpdatedAt(LocalDateTime.now());

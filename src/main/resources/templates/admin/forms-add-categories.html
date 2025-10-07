@@ -115,7 +115,13 @@
                         </a>
                         <div class="collapse " id="sidebarDashboards">
                             <ul class="nav flex-column">
-                                <!--end nav-item-->
+
+                                <!-- Dashboard mới -->
+                                <li class="nav-item">
+                                    <a th:href="@{/admin/home}" class="nav-link">
+                                        <span>Dashboard</span>
+                                    </a>
+                                </li>
 
                                 <!-- Items -->
                                 <li class="nav-item">
@@ -261,6 +267,10 @@
         <!--end Rightbar-->
         <!--Start Footer-->
 
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <span th:text="${error}"></span>
+        </div>
+
         <div class="container mt-4">
             <div class="row">
                 <div class="col-lg-5 col-md-6"> <!-- form nhỏ hơn, nằm bên trái -->
@@ -271,7 +281,10 @@
                                     name</label>
                                 <div class="col-sm-9">
                                     <input class="form-control" type="text" value="" id="example-name-input"
-                                           th:field="*{category_name}">
+                                           th:field="*{category_name}" required minlength="2" maxlength="100">
+                                    <div class="invalid-feedback">
+                                        Tên danh mục không được bỏ trống(2-100 ký tự)
+                                    </div>
                                 </div>
                             </div>
                             <!-- Nút Create ở góc phải -->
@@ -280,6 +293,22 @@
                             </div>
                         </div>
                     </form>
+                    <script>
+                        // Bootstrap validation
+                        (function () {
+                            'use strict'
+                            const forms = document.querySelectorAll('form')
+                            Array.from(forms).forEach(form => {
+                                form.addEventListener('submit', event => {
+                                    if (!form.checkValidity()) {
+                                        event.preventDefault()
+                                        event.stopPropagation()
+                                    }
+                                    form.classList.add('was-validated')
+                                }, false)
+                            })
+                        })()
+                    </script>
                 </div>
             </div>
         </div>

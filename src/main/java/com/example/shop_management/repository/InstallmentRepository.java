@@ -24,6 +24,9 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
             "WHERE u.id = :userId AND i.paid = false")
     Long findTotalUnpaidAmountByUserId(@Param("userId") Long userId);
 
+    @Query(value = "SELECT * FROM installment WHERE id = :paymentId", nativeQuery = true)
+    List<Installment> findByPaymentId(@Param("paymentId") Long paymentId);
+
 
 
 }

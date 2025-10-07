@@ -228,103 +228,105 @@
             <!--end Rightbar-->
             <!--Start Footer-->
             <!-- Success Alert -->
-            <div th:if="${successMessage}"
+            <div th:if="${success}"
                  class="alert alert-success alert-dismissible fade show" role="alert">
-                <span th:text="${successMessage}"></span>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-
-            <!-- Hiện thông báo thành công -->
-            <div th:if="${success}" class="alert alert-success" role="alert">
                 <span th:text="${success}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
 
             <!-- Hiện thông báo lỗi -->
             <div th:if="${error}" class="alert alert-danger" role="alert">
                 <span th:text="${error}"></span>
             </div>
-
-
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table mb-0 checkbox-all" id="datatable_1">
-                        <thead class="table-light">
+                    <table class="table table-bordered table-hover align-middle" id="datatable_1">
+                        <thead class="table-light text-center align-middle">
                         <tr>
-                            <th style="width: 16px;">
-                                <div class="form-check mb-0 ms-n1">
-                                    <input type="checkbox" class="form-check-input" name="select-all"
-                                           id="select-all">
-                                </div>
-                            </th>
-                            <th class="ps-0">Items</th>
-                            <th>Total amount</th>
-                            <th>Status</th>
-                            <th class="text-end">Action</th>
+                            <th>🛍️ Items</th>
+                            <th>💰 Total Amount (₫)</th>
+                            <th>💳 Payment Method</th>
+                            <th>🚚 Shipping Status</th>
+                            <th>📦 Order Status</th>
+                            <th>🏠 Shipping Address</th>
+                            <th>⚙️ Action</th>
                         </tr>
                         </thead>
-                        <tbody>
-                        <tr th:each="orderhistory: ${orderhistories}">
-                            <td style="width: 16px;">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" name="check"
-                                           id="customCheck1">
-                                </div>
-                            </td>
-                            <td class="ps-0">
-                                <p class="d-inline-block align-middle mb-0" th:text="${orderhistory.order_items}">
+
+                        <tbody class="text-center">
+                        <tr th:each="orderhistory : ${orderhistories}">
+                            <td class="text-start" style="max-width: 200px; word-wrap: break-word;">
+                                <p class="mb-0 fw-semibold text-primary"
+                                   th:text="${orderhistory.order_items}">
                                 </p>
                             </td>
 
-                            <td th:text="${orderhistory.total_amount}"></td>
-                            <td th:text="${orderhistory.status}"></td>
-                            <td class="text-end">
+                            <td class="fw-bold text-danger"
+                                th:text="${#numbers.formatDecimal(orderhistory.total_amount, 0, 'COMMA', 0, 'POINT')}"></td>
+
+                            <td>
+                        <span class="badge bg-info text-dark"
+                              th:text="${#lists.isEmpty(orderhistory.payment) ? 'Chưa có' : orderhistory.payment[0].payment_method}">
+                        </span>
+                            </td>
+
+                            <td>
+                        <span th:switch="${orderhistory.shipping_status}">
+                            <span th:case="0" class="badge bg-secondary">Chưa giao</span>
+                            <span th:case="1" class="badge bg-warning text-dark">Đang giao</span>
+                            <span th:case="2" class="badge bg-success">Giao thành công</span>
+                            <span th:case="3" class="badge bg-danger">Giao thất bại</span>
+                        </span>
+                            </td>
+
+                            <td>
+                        <span th:switch="${orderhistory.status}">
+                            <span th:case="0" class="badge bg-secondary">Đang chờ</span>
+                            <span th:case="1" class="badge bg-warning text-dark">Đang xử lý</span>
+                            <span th:case="2" class="badge bg-success">Hoàn tất</span>
+                            <span th:case="3" class="badge bg-danger">Đã hủy</span>
+                        </span>
+                            </td>
+
+                            <td class="text-start" th:text="${orderhistory.address.addressLine}"></td>
+
+                            <td>
                                 <a th:href="@{/user/myorder/delete/{id}(id=${orderhistory.id})}"
+                                   class="btn btn-sm btn-outline-danger"
                                    onclick="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')">
                                     ❌ Xóa
                                 </a>
-
                             </td>
-
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </div> <!-- end col -->
-</div> <!-- end row -->
-</div><!-- container -->
 
-<footer class="footer text-center text-sm-start d-print-none">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card mb-0 border-bottom-0 rounded-bottom-0">
-                    <div class="card-body">
-                        <p class="text-muted mb-0">
-                            ©
-                            <script> document.write(new Date().getFullYear()) </script>
-                            Dastone
-                            <span class="text-muted d-none d-sm-inline-block float-end">
+            <footer class="footer text-center text-sm-start d-print-none">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mb-0 border-bottom-0 rounded-bottom-0">
+                            <div class="card-body">
+                                <p class="text-muted mb-0">
+                                    ©
+                                    <script> document.write(new Date().getFullYear()) </script>
+                                    Dastone
+                                    <span class="text-muted d-none d-sm-inline-block float-end">
                                     Design with
                                     <i class="iconoir-heart-solid text-danger align-middle"></i>
                                     by Group 3</span>
-                        </p>
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</footer>
-
+        </footer>
+    </div> <!-- end col -->
+</div> <!-- end row --><!-- container -->
 <!--end footer-->
-</div>
-<!-- end page content -->
-</div>
-<!-- end page-wrapper -->
-
-<!-- Javascript  -->
-<!-- vendor js -->
 
 <script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="/libs/simplebar/simplebar.min.js"></script>

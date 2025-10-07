@@ -5,6 +5,7 @@ import com.example.shop_management.model.User;
 import com.example.shop_management.repository.UserRepository;
 import com.example.shop_management.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
 import org.springframework.ui.Model;
@@ -26,7 +27,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/list-user")
     public String ListUser(Model model, Principal principal) {
@@ -41,7 +43,7 @@ public class UserController {
         return "admin/ecommerce-users";
     }
 
-    // Form thêm sản phẩm
+    // Form thêm người dùng
     @GetMapping("/add-user")
     public String showAddForm(Model model, Principal principal) {
         model.addAttribute("user", new User());
@@ -57,6 +59,17 @@ public class UserController {
     // Xử lý thêm user
     @PostMapping("/add-user")
     public String addUser(@ModelAttribute User user, RedirectAttributes redirectAttributes) {
+
+        // Kiểm tra trùng username
+        if (userService.userExistsByUsername(user.getUsername())) {
+            redirectAttributes.addFlashAttribute("error", "Username already exists!");
+            return "redirect:/list-user";
+        }
+        user.setFull_name(user.getFull_name());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setFull_name(user.getFull_name());
+        user.setEmail(user.getEmail());
+        user.setPhone_number(user.getPhone_number());
         user.setCredit_limit(BigDecimal.valueOf(10000000L));
         user.setRoles("USER");
         user.setStatus(1);
@@ -65,7 +78,7 @@ public class UserController {
         userService.addUser(user);
 
         // Thông báo
-        redirectAttributes.addFlashAttribute("successMessage", "User added successfully!");
+        redirectAttributes.addFlashAttribute("success", "User added successfully!");
         return "redirect:/list-user";
     }
 
@@ -86,14 +99,19 @@ public class UserController {
     public String updateUser(@PathVariable Long id,
                              @ModelAttribute User user,
                              RedirectAttributes redirectAttributes) {
-        user.setCredit_limit(BigDecimal.valueOf(10000000L));
-        user.setRoles("USER");
-        user.setStatus(1);
+        user.setUsername(user.getUsername());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setFull_name(user.getFull_name());
+        user.setEmail(user.getEmail());
+        user.setPhone_number(user.getPhone_number());
+        user.setCredit_limit(user.getCredit_limit());
+        user.setRoles(user.getRoles());
+        user.setStatus(user.getStatus());
         user.setCreatedAt(LocalDateTime.now()); // cái này nếu muốn giữ createdAt gốc thì không set lại
         user.setUpdatedAt(LocalDateTime.now());
         userService.updateUser(id, user);
 
-        redirectAttributes.addFlashAttribute("successMessage", "User updated successfully!");
+        redirectAttributes.addFlashAttribute("success", "User updated successfully!");
         return "redirect:/list-user";
     }
 
@@ -102,7 +120,7 @@ public class UserController {
     public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         userService.deleteUser(id);
 
-        redirectAttributes.addFlashAttribute("successMessage", "User deleted successfully!");
+        redirectAttributes.addFlashAttribute("success", "User deleted successfully!");
         return "redirect:/list-user";
     }
 }

@@ -1,9 +1,20 @@
 spring:
   application:
     name: shop_management
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nguyenminhthebn2004@gmail.com
+    password: yhjx djfo vysf boam
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   datasource:
-    url: jdbc:mysql://localhost:3305/shop_management?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3305/shop_management_2?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: "Minhthe2004:)"
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -30,3 +41,6 @@ vnpay:
   version: 2.1.0
   command: pay
   orderType: other
+
+
+

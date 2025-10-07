@@ -7,13 +7,15 @@ public class ProductDTO {
     private String item_image;
     private String category_name;
     private Long item_price;
+    private Long stock_quantity;
 
-    public ProductDTO(Long id, String item_name, String item_image, String category_name, Long item_price) {
+    public ProductDTO(Long id, String item_name, String item_image, String category_name, Long item_price, Long stock_quantity) {
         this.id = id;
         this.item_name = item_name;
         this.item_image = item_image;
         this.category_name = category_name;
         this.item_price = item_price;
+        this.stock_quantity = stock_quantity;
     }
 
     public Long getId() {
@@ -54,5 +56,13 @@ public class ProductDTO {
 
     public void setItem_price(Long item_price) {
         this.item_price = item_price;
+    }
+
+    public Long getStock_quantity() {
+        return stock_quantity;
+    }
+
+    public void setStock_quantity(Long stock_quantity) {
+        this.stock_quantity = stock_quantity;
     }
 }

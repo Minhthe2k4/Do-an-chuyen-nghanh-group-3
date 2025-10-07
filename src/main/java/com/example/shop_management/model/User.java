@@ -24,16 +24,24 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
-    private String password;
-
     // lưu nhiều role dạng "USER,ADMIN"
     private String roles;
 
+    @Column(nullable = false)
+    private String password;
+
+    //0: inactive
+    //1: active
     private Integer status;
 
     @Column(name = "credit_limit")
     private BigDecimal credit_limit;
+
+    private String full_name;
+
+    private String email;
+
+    private String phone_number;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -54,4 +62,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<OrderHistory> orderhistory;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Address> addresses;
 }

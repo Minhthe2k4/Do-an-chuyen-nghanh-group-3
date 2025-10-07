@@ -65,9 +65,9 @@
                                 <img src="/images/users/avatar-1.jpg" alt="" class="thumb-md rounded-circle">
                             </div>
                             <div class="flex-grow-1 ms-2 text-truncate align-self-center">
-                                <h6 th:text="${users.username}" class="my-0 fw-medium text-dark fs-13">William
+                                <h6 th:text="${user.username}" class="my-0 fw-medium text-dark fs-13">William
                                     Martin</h6>
-                                <small th:text="${users.roles}" class="text-muted mb-0">Front End Developer</small>
+                                <small th:text="${user.roles}" class="text-muted mb-0">Front End Developer</small>
                             </div><!--end media-body-->
                         </div>
                         <div class="dropdown-divider mt-0"></div>
@@ -228,203 +228,189 @@
             <!--Start Footer-->
             <!-- Success Alert -->
 
-            <div class="card-body">
-                <div class="table-responsive">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="page-title-box d-md-flex justify-content-md-between align-items-center">
-                                <h4 class="page-title">Spay Later</h4>
-                                <div class="">
-                                    <ol class="breadcrumb mb-0">
-                                        <li class="breadcrumb-item"><a href="#">Dastone</a>
-                                        </li><!--end nav-item-->
-                                        <li class="breadcrumb-item"><a href="#">Ecommerce</a>
-                                        </li><!--end nav-item-->
-                                        <li class="breadcrumb-item active">Spay Later</li>
-                                    </ol>
-                                </div>
-                            </div><!--end page-title-box-->
-                        </div><!--end col-->
-                    </div><!--end row-->
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="card">
-                                <div class="card-header">
-                                    <div class="row g-4">
+            <div class="card-body bg-light p-4 rounded shadow-sm">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h4 class="fw-bold text-primary mb-0"><i class="fas fa-wallet me-2"></i> SPay Later</h4>
+                        <small class="text-muted">Manage your installment payments and balance</small>
+                    </div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="#" class="text-decoration-none">E-commerce</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">SPay Later</li>
+                        </ol>
+                    </nav>
+                </div>
 
-                                        <!-- Cột trái -->
-                                        <div class="col-md-6">
-                                            <!-- Available Balance -->
-                                            <div class="balance-box mb-3">
-                                                <p class="mb-1 text-muted">Available balance</p>
-                                                <h2 class="fw-bold text-primary"
-                                                    th:text="${#numbers.formatDecimal(availableBalance, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
-                                                    0 VNĐ
-                                                </h2>
-                                            </div>
+                <div class="row g-4">
+                    <!-- LEFT COLUMN -->
+                    <div class="col-md-6">
+                        <!-- Available Balance -->
+                        <div class="card border-0 shadow-sm p-4 mb-4">
+                            <h6 class="text-muted mb-2"><i class="fas fa-credit-card me-2"></i>Available Balance</h6>
+                            <h2 class="fw-bold text-success"
+                                th:text="${#numbers.formatDecimal(availableBalance, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                                0 VNĐ
+                            </h2>
+                            <p class="text-muted small mt-1">Use this balance to make purchases with SPay Later</p>
+                        </div>
 
-                                            <!-- Current Payment Period -->
-                                            <div class="bill-box">
-                                                <h5 class="fw-bold mb-1"
-                                                    th:text="${#lists.isEmpty(currentBills.installments) ? '0 VNĐ'
-     : #numbers.formatDecimal(currentBills.total_amount
-     + currentBills.total_fee
-     + currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
-                                                </h5>
-                                                <p class="text-muted mb-0">Payment period from 24th to 10th</p>
+                        <!-- Current Payment Period -->
+                        <div class="card border-0 shadow-sm p-4">
+                            <h6 class="text-muted mb-2"><i class="fas fa-calendar-day me-2"></i>Current Payment Period</h6>
+                            <h4 class="fw-bold text-primary"
+                                th:text="${#lists.isEmpty(currentBills.installments) ? '0 VNĐ'
+                         : #numbers.formatDecimal(currentBills.total_amount
+                         + currentBills.total_fee
+                         + currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">
+                                0 VNĐ
+                            </h4>
+                            <p class="text-muted small mb-2">From 24th to 10th of next month</p>
 
-                                                <!-- Nếu có bill hiện tại -->
-                                                <div th:if="${!#lists.isEmpty(currentBills.installments)}" class="mt-2">
-                                                    <form th:action="@{/user/bills/pay-current}" method="post"
-                                                          class="d-flex justify-content-start align-items-center">
-
-                                                        <div class="mb-2">
-                                                            <!-- nút chi tiết -->
-                                                            <button type="button" class="btn btn-sm btn-square"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#currentModal">
-                                                                <i class="fas fa-angle-right"></i>
-                                                            </button>
-                                                        </div>
-
-                                                    </form>
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <!-- Modal Current Bills -->
-                                        <div class="modal fade" id="currentModal" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h6 class="modal-title">Detail current</h6>
-                                                        <button type="button" class="btn-close"
-                                                                data-bs-dismiss="modal"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <h3 th:text="${#numbers.formatDecimal(currentBills.total_amount
-                                        + currentBills.total_fee
-                                        + currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></h3>
-                                                        <p class="text-muted">Payment period to 10th</p>
-
-                                                        <h5>Total principal:
-                                                            <span th:text="${#numbers.formatDecimal(currentBills.total_amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                                                        </h5>
-                                                        <h5>Installment conversion fee:
-                                                            <span th:text="${#numbers.formatDecimal(currentBills.total_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                                                        </h5>
-                                                        <h5>Late Fee:
-                                                            <span th:text="${#numbers.formatDecimal(currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-                                                        </h5>
-
-                                                        <hr/>
-                                                        <h5>Installments</h5>
-                                                        <table class="table table-bordered">
-                                                            <thead>
-                                                            <tr>
-                                                                <th>Order</th>
-                                                                <th>No</th>
-                                                                <th>Principal</th>
-                                                                <th>Fee</th>
-                                                                <th>Late Fee</th>
-                                                                <th>Total</th>
-                                                            </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                            <tr th:each="ins : ${currentBills.installments}">
-                                                                <td th:text="${ins.payment.orderhistory.id}"></td>
-                                                                <td th:text="${ins.installment_no}"></td>
-                                                                <td th:text="${#numbers.formatDecimal(ins.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
-                                                                <td th:text="${#numbers.formatDecimal(ins.amount * 0.02, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
-                                                                <td th:text="${#numbers.formatDecimal(ins.late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
-                                                                <td th:text="${#numbers.formatDecimal(ins.amount + (ins.amount*0.02) + ins.late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
-                                                            </tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Cột phải -->
-                                        <div class="col-md-6">
-                                            <div class="bill-panel">
-                                                <!-- Tabs -->
-                                                <ul class="nav nav-tabs mb-3">
-                                                    <li class="nav-item">
-                                                        <button class="nav-link active" data-bs-toggle="tab"
-                                                                data-bs-target="#unpaid" type="button">Unpaid
-                                                        </button>
-                                                    </li>
-                                                    <li class="nav-item">
-                                                        <button class="nav-link" data-bs-toggle="tab"
-                                                                data-bs-target="#paid" type="button">Paid
-                                                        </button>
-                                                    </li>
-                                                </ul>
-
-                                                <div class="tab-content">
-
-                                                    <!-- Unpaid -->
-                                                    <div class="tab-pane fade show active" id="unpaid">
-                                                        <p class="text-muted">Next bills</p>
-                                                        <div th:if="${nextUnpaid != null}"
-                                                             class="bill-item d-flex justify-content-between align-items-center mb-2">
-
-                                                            <div>
-                                                                <h6 th:text="'Payment period to ' + ${#temporals.format(nextUnpaid.due_date, 'dd/MM/yyyy')}"></h6>
-                                                            </div>
-
-                                                            <div>
-            <span class="fw-bold"
-                  th:text="${#numbers.formatDecimal(nextUnpaid.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
-
-                                                                <!-- Chỉ hiện nút Pay khi đến hạn -->
-                                                                <form th:if="${nextUnpaid.due_date != null and
-                          (nextUnpaid.due_date.isBefore(T(java.time.LocalDateTime).now())
-                          or nextUnpaid.due_date.isEqual(T(java.time.LocalDateTime).now()))}"
-                                                                      th:action="@{/user/bills/{id}/pay(id=${nextUnpaid.id})}"
-                                                                      method="post" style="display:inline">
-                                                                    <input type="hidden"
-                                                                           th:name="${_csrf.parameterName}"
-                                                                           th:value="${_csrf.token}"/>
-                                                                    <button type="submit"
-                                                                            class="btn btn-sm btn-success">Pay
-                                                                    </button>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Paid -->
-                                                    <div class="tab-pane fade" id="paid">
-                                                        <div th:each="bill : ${paidBills}"
-                                                             class="bill-item d-flex justify-content-between">
-                                                            <div>
-                                                                <h6 th:text="'Installment ' + ${bill.installment_no}"></h6>
-                                                                <small class="text-muted"
-                                                                       th:text="'Paid on ' + ${#temporals.format(bill.paid_at, 'dd/MM/yyyy HH:mm')}"></small>
-                                                            </div>
-                                                            <div class="fw-bold text-success"
-                                                                 th:text="${#numbers.formatDecimal(bill.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                            </div>
-                                        </div>
-
-                                    </div><!-- end row -->
-                                </div>
+                            <div th:if="${!#lists.isEmpty(currentBills.installments)}" class="mt-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#currentModal">
+                                    <i class="fas fa-info-circle me-1"></i> View Details
+                                </button>
                             </div>
                         </div>
                     </div>
 
+                    <!-- RIGHT COLUMN -->
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm p-4">
+                            <h6 class="text-muted mb-3"><i class="fas fa-list me-2"></i>Billing Overview</h6>
 
-                </div> <!-- end row -->
-            </div><!-- container -->
+                            <!-- Tabs -->
+                            <ul class="nav nav-tabs mb-3" id="billTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="unpaid-tab" data-bs-toggle="tab"
+                                            data-bs-target="#unpaid" type="button" role="tab">
+                                        <i class="fas fa-hourglass-half me-1"></i> Unpaid
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="paid-tab" data-bs-toggle="tab"
+                                            data-bs-target="#paid" type="button" role="tab">
+                                        <i class="fas fa-check-circle me-1"></i> Paid
+                                    </button>
+                                </li>
+                            </ul>
 
+                            <div class="tab-content">
+                                <!-- Unpaid -->
+                                <div class="tab-pane fade show active" id="unpaid" role="tabpanel">
+                                    <p class="text-muted small mb-2">Upcoming payment</p>
+                                    <div th:if="${nextUnpaid != null}"
+                                         class="d-flex justify-content-between align-items-center border rounded p-3 bg-white shadow-sm">
+                                        <div>
+                                            <h6 class="fw-semibold mb-1"
+                                                th:text="'Due by ' + ${#temporals.format(nextUnpaid.due_date, 'dd/MM/yyyy')}"></h6>
+                                            <small class="text-muted">Next installment</small>
+                                        </div>
+
+                                        <div class="text-end">
+                                <span class="fw-bold text-danger d-block"
+                                      th:text="${#numbers.formatDecimal(nextUnpaid.amount
+                                              + (nextUnpaid.amount * 0.02)
+                                              + nextUnpaid.late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+
+                                            <!-- Pay button -->
+                                            <form th:if="${nextUnpaid.due_date != null and
+                                        (nextUnpaid.due_date.toLocalDate().isBefore(T(java.time.LocalDate).now())
+                                         or nextUnpaid.due_date.toLocalDate().isEqual(T(java.time.LocalDate).now()))}"
+                                                  th:action="@{/user/bills/{id}/pay(id=${nextUnpaid.id})}"
+                                                  method="get">
+                                                <button type="submit" class="btn btn-sm btn-success mt-2">
+                                                    <i class="fas fa-money-bill-wave me-1"></i> Pay Now
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Paid -->
+                                <div class="tab-pane fade" id="paid" role="tabpanel">
+                                    <div th:each="bill : ${paidBills}"
+                                         class="d-flex justify-content-between align-items-center border rounded p-3 bg-white shadow-sm mb-2">
+                                        <div>
+                                            <h6 class="fw-semibold mb-1" th:text="'Installment ' + ${bill.installment_no}"></h6>
+                                            <small class="text-muted"
+                                                   th:text="'Paid on ' + ${#temporals.format(bill.paid_at, 'dd/MM/yyyy HH:mm')}"></small>
+                                        </div>
+                                        <span class="fw-bold text-success"
+                                              th:text="${#numbers.formatDecimal(bill.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL: Current Bills -->
+                <div class="modal fade" id="currentModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white">
+                                <h6 class="modal-title"><i class="fas fa-file-invoice-dollar me-2"></i> Current Bill Details</h6>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h4 class="fw-bold text-primary"
+                                    th:text="${#numbers.formatDecimal(currentBills.total_amount
+                            + currentBills.total_fee
+                            + currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></h4>
+                                <p class="text-muted mb-3">Payment period until the 10th</p>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <h6>Total Principal:</h6>
+                                        <p class="fw-semibold"
+                                           th:text="${#numbers.formatDecimal(currentBills.total_amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Installment Fee:</h6>
+                                        <p class="fw-semibold"
+                                           th:text="${#numbers.formatDecimal(currentBills.total_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>Late Fee:</h6>
+                                        <p class="fw-semibold text-danger"
+                                           th:text="${#numbers.formatDecimal(currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
+                                    </div>
+                                </div>
+
+                                <hr>
+                                <h6 class="fw-bold mb-3">Installment Breakdown</h6>
+                                <table class="table table-bordered align-middle text-center">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>No</th>
+                                        <th>Principal</th>
+                                        <th>Fee</th>
+                                        <th>Late Fee</th>
+                                        <th>Total</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="ins : ${currentBills.installments}">
+                                        <td th:text="${ins.payment.orderhistory.id}"></td>
+                                        <td th:text="${ins.installment_no}"></td>
+                                        <td th:text="${#numbers.formatDecimal(ins.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                        <td th:text="${#numbers.formatDecimal(ins.amount.multiply(T(java.math.BigDecimal).valueOf(0.02)), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                        <td th:text="${#numbers.formatDecimal(ins.late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                        <td th:text="${#numbers.formatDecimal(ins.amount.add(ins.amount.multiply(T(java.math.BigDecimal).valueOf(0.02))).add(ins.late_fee == null ? T(java.math.BigDecimal).ZERO : ins.late_fee), 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <footer class="footer text-center text-sm-start d-print-none">
                 <div class="container-fluid">
                     <div class="row">

@@ -22,8 +22,6 @@ public class SecurityConfig {
         this.userDetailsService = userDetailsService;
     }
 
-
-
     @Autowired
     private CustomSuccessHandler customSuccessHandler;
 

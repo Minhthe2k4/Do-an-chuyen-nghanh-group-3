@@ -1,9 +1,8 @@
 package com.example.shop_management.controller.user;
 
-import com.example.shop_management.model.OrderHistory;
-import com.example.shop_management.model.User;
-import com.example.shop_management.repository.OrderHistoryRepository;
-import com.example.shop_management.repository.UserRepository;
+import com.example.shop_management.Enum.PaymentMethod;
+import com.example.shop_management.model.*;
+import com.example.shop_management.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,55 +27,96 @@ public class OrderUserController {
     @Autowired
     private UserRepository userRepository;
 
-    @GetMapping("/myorder")
-    public String viewOrder(Model model, Principal principal) {
-        String username = principal.getName();
+    @Autowired
+    private PaymentRepository paymentRepository;
 
-        // Lấy user hiện tại
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private CartRepository cartRepository;
+
+
+
+    @GetMapping("/myorder")
+    public String viewOrder(Model model,
+                            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
+        // Lấy username từ principal (Spring Security)
+        String username = principal.getUsername();
+
+        // Luôn lấy user mới nhất từ DB
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // Chỉ lấy order của user đó
+        // Lấy danh sách order của user
         List<OrderHistory> orderHistories = orderHistoryRepository.findByUserId(user.getId());
 
+        // Truyền dữ liệu ra view
+        model.addAttribute("users", user);              // user mới nhất (đã update credit_limit)
         model.addAttribute("orderhistories", orderHistories);
-        model.addAttribute("users", user);
+
         return "user/myorder";
     }
-
 
     @Transactional
     @GetMapping("/myorder/delete/{id}")
     public String deleteOrder(@PathVariable("id") Long orderId,
                               RedirectAttributes redirectAttributes,
                               @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
-        // Lấy user hiện tại
-        String username = principal.getUsername();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            String username = principal.getUsername();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Lấy orderHistory
-        OrderHistory orderHistory = orderHistoryRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+            // Tìm đơn hàng
+            OrderHistory orderHistory = orderHistoryRepository.findById(orderId)
+                    .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Kiểm tra order có thuộc về user hay không
-        if (!orderHistory.getUser().getId().equals(user.getId())) {
-            redirectAttributes.addFlashAttribute("error", "You don't have the right to delete this order!");
-            return "redirect:/user/myorder";
+            // Lấy thông tin thanh toán
+            Payment payment = paymentRepository.findByOrderhistoryId(orderId);
+
+            // ✅ Cộng lại stock dựa vào order_items
+            String orderItems = orderHistory.getOrder_items(); // VD: "Áo thun x2, Quần jean x1"
+            if (orderItems != null && !orderItems.isBlank()) {
+                String[] items = orderItems.split(",\\s*");
+                for (String itemStr : items) {
+                    String[] parts = itemStr.split(" x");
+                    if (parts.length == 2) {
+                        String productName = parts[0].trim();
+                        int quantity = Integer.parseInt(parts[1].trim());
+                        Product product = productRepository.findByItemName(productName);
+                        if (product != null) {
+                            product.setStock_quantity(product.getStock_quantity() + quantity);
+                            productRepository.save(product);
+                        }
+                    }
+                }
+                productRepository.flush();
+            }
+
+            // ✅ Xóa order của user
+            orderHistoryRepository.deleteByIdAndUserId(orderId, user.getId());
+
+            // ✅ Nếu thanh toán SPayLater thì cộng lại credit limit
+            if (payment != null && payment.getPayment_method() == PaymentMethod.SPAY_LATER) {
+                BigDecimal orderAmount = orderHistory.getTotal_amount();
+                if (orderAmount != null) {
+                    user.setCredit_limit(user.getCredit_limit().add(orderAmount));
+                    userRepository.save(user);
+                }
+            }
+
+            redirectAttributes.addFlashAttribute("success", "The order was deleted successfully");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Delete failed: " + e.getMessage());
         }
 
-
-        // Xóa order history (MySQL sẽ cascade sang payments, installments, transactions)
-        orderHistoryRepository.delete(orderHistory);
-
-        // Đảm bảo flush (Hibernate xóa ngay, không chờ)
-        orderHistoryRepository.flush();
-
-        redirectAttributes.addFlashAttribute("success", "The order was deleted and refunded successfully");
         return "redirect:/user/myorder";
     }
-
-
-
 
 }
