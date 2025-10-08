@@ -220,25 +220,34 @@ public class PaymentController {
 
         // --------- Trả góp: Thanh toán 1 kỳ hoặc tất cả ----------
         if (orderInfo != null && orderInfo.startsWith("installment:")) {
-            Long installmentId = Long.parseLong(orderInfo.split(":")[1]);
-            Installment installment = installmentRepository.findById(installmentId)
-                    .orElseThrow(() -> new RuntimeException("Installment not found"));
+            Long installmentNo = Long.parseLong(orderInfo.split(":")[1]);
 
-            if (!installment.isPaid()) {
-                installment.setPaid(true);
-                installment.setPaid_at(LocalDateTime.now());
-                installmentRepository.save(installment);
-
-                User insUser = installment.getPayment().getOrderhistory().getUser();
-                insUser.setCredit_limit(insUser.getCredit_limit().add(total));
-                userRepository.save(insUser);
-                session.setAttribute("user", insUser);
+            List<Installment> installments = installmentRepository.findUnpaidByInstallmentNo(installmentNo);
+            if (installments.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "No unpaid installments found for this batch!");
+                return "redirect:/user/spay-later";
             }
 
-            redirectAttributes.addFlashAttribute("success", "Installment paid successfully!");
-            return "redirect:/user/spay-later";
+            installments.forEach(i -> {
+                i.setPaid(true);
+                i.setPaid_at(LocalDateTime.now());
+            });
+            installmentRepository.saveAll(installments);
 
-        } else if (orderInfo != null && orderInfo.startsWith("all_unpaid_installments")) {
+            // Cộng lại hạn mức cho user
+            BigDecimal total1 = installments.stream()
+                    .map(Installment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            User insUser = installments.get(0).getPayment().getOrderhistory().getUser();
+            insUser.setCredit_limit(insUser.getCredit_limit().add(total1));
+            userRepository.save(insUser);
+            session.setAttribute("user", insUser);
+
+            redirectAttributes.addFlashAttribute("success", "Installment batch paid successfully!");
+            return "redirect:/user/spay-later";
+        }
+        else if (orderInfo != null && orderInfo.startsWith("all_unpaid_installments")) {
             Long userId = Long.parseLong(orderInfo.split("=")[1]);
             User insUser = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
@@ -318,52 +327,144 @@ public class PaymentController {
         return "redirect:/user/home";
     }
 
-    @GetMapping("/spay-later") public String viewSpayLater(Model model, @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
-        // Lấy user mới nhất từ database
+    @GetMapping("/spay-later")
+    public String viewSpayLater(Model model,
+                                @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
+
+        // 1️⃣ Lấy thông tin user hiện tại
         String username = principal.getUsername();
-        User user = userRepository.findByUsername(username) .orElseThrow(() -> new RuntimeException("User not found: " + username));
-        // Lấy danh sách kỳ trả góp của user
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        // 2️⃣ Lấy danh sách kỳ trả góp của user
         List<Installment> installments = installmentRepository.findByUserId(user.getId());
 
-        // Danh sách chưa trả (sort theo ngày đến hạn)
+        // 3️⃣ Phân loại hóa đơn: chưa trả và đã trả
         List<Installment> unpaidBills = installments.stream()
                 .filter(i -> !i.isPaid())
                 .sorted(Comparator.comparing(Installment::getDue_date))
                 .collect(Collectors.toList());
 
-        // Danh sách đã trả (sort theo ngày trả mới nhất)
         List<Installment> paidBills = installments.stream()
-                .filter(Installment::isPaid) .sorted(Comparator.comparing(Installment::getPaid_at).reversed())
+                .filter(Installment::isPaid)
+                .sorted(Comparator.comparing(Installment::getPaid_at).reversed())
                 .collect(Collectors.toList());
 
+        // 4️⃣ Gom nhóm các kỳ CHƯA TRẢ theo installment_no
+        LinkedHashMap<Long, List<Installment>> groupedUnpaidBills = unpaidBills.stream()
+                .collect(Collectors.groupingBy(
+                        Installment::getInstallment_no,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
 
-        // Kỳ gần nhất chưa trả
-        Installment nextUnpaid = unpaidBills.isEmpty() ? null : unpaidBills.get(0);
+        // 5️⃣ Tính toán tổng tiền từng nhóm (UNPAID)
+        Map<Long, BigDecimal> principalByGroup = new LinkedHashMap<>();
+        Map<Long, BigDecimal> feeByGroup = new LinkedHashMap<>();
+        Map<Long, BigDecimal> lateFeeByGroup = new LinkedHashMap<>();
+        Map<Long, BigDecimal> grandTotalByGroup = new LinkedHashMap<>();
 
-        // Tổng tiền gốc (cả kỳ chưa trả)
-        BigDecimal totalAmount = unpaidBills.stream() .map(Installment::getAmount) .reduce(BigDecimal.ZERO, BigDecimal::add);
+        for (Map.Entry<Long, List<Installment>> entry : groupedUnpaidBills.entrySet()) {
+            BigDecimal principall = entry.getValue().stream()
+                    .map(Installment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Tổng phí trễ hạn (nếu có)
-        BigDecimal totalLateFee = unpaidBills.stream()
-                .map(i -> i.getLate_fee() == null ? BigDecimal.ZERO : i.getLate_fee())
+            BigDecimal fee = principall.multiply(BigDecimal.valueOf(0.02)); // phí 2%
+            BigDecimal lateFee = entry.getValue().stream()
+                    .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal total = principall.add(fee).add(lateFee);
+
+            principalByGroup.put(entry.getKey(), principall);
+            feeByGroup.put(entry.getKey(), fee);
+            lateFeeByGroup.put(entry.getKey(), lateFee);
+            grandTotalByGroup.put(entry.getKey(), total);
+        }
+
+        // 6️⃣ Gom nhóm các kỳ ĐÃ TRẢ
+        LinkedHashMap<Long, List<Installment>> groupedPaidBills = paidBills.stream()
+                .collect(Collectors.groupingBy(
+                        Installment::getInstallment_no,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        // 7️⃣ Tính tổng tiền từng nhóm (PAID) — giống logic UNPAID
+        Map<Long, BigDecimal> principalByPaidGroup = new LinkedHashMap<>();
+        Map<Long, BigDecimal> feeByPaidGroup = new LinkedHashMap<>();
+        Map<Long, BigDecimal> lateFeeByPaidGroup = new LinkedHashMap<>();
+        Map<Long, BigDecimal> grandTotalByPaidGroup = new LinkedHashMap<>();
+
+        for (Map.Entry<Long, List<Installment>> entry : groupedPaidBills.entrySet()) {
+            BigDecimal principall = entry.getValue().stream()
+                    .map(Installment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal fee = principall.multiply(BigDecimal.valueOf(0.02)); // phí 2%
+            BigDecimal lateFee = entry.getValue().stream()
+                    .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal total = principall.add(fee).add(lateFee);
+
+            principalByPaidGroup.put(entry.getKey(), principall);
+            feeByPaidGroup.put(entry.getKey(), fee);
+            lateFeeByPaidGroup.put(entry.getKey(), lateFee);
+            grandTotalByPaidGroup.put(entry.getKey(), total);
+        }
+
+        // 8️⃣ Tìm kỳ chưa trả gần nhất (theo due_date nhỏ nhất)
+        List<Installment> nextUnpaidGroup = Collections.emptyList();
+        if (!unpaidBills.isEmpty()) {
+            Installment nextUnpaid = unpaidBills.get(0);
+            Long nextInstallmentNo = nextUnpaid.getInstallment_no();
+            nextUnpaidGroup = groupedUnpaidBills.getOrDefault(nextInstallmentNo, Collections.emptyList());
+        }
+
+        // 9️⃣ Tính tổng toàn bộ chưa trả
+        BigDecimal totalPrincipal = unpaidBills.stream()
+                .map(Installment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Tổng phí dịch vụ 2%
-        BigDecimal totalFee = totalAmount.multiply(BigDecimal.valueOf(0.02));
+        BigDecimal totalLateFee = unpaidBills.stream()
+                .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Tổng thanh toán thực tế (gồm cả late fee)
-        BigDecimal totalToPay = totalAmount.add(totalFee).add(totalLateFee);
+        BigDecimal totalFee = totalPrincipal.multiply(BigDecimal.valueOf(0.02));
+        BigDecimal totalToPay = totalPrincipal.add(totalFee).add(totalLateFee);
 
-        // Gửi sang model
-        CurrentBillSummary currentBills = new CurrentBillSummary(totalToPay, totalFee, totalLateFee, unpaidBills);
-
-        // Thêm dữ liệu vào model
-        model.addAttribute("user", user); // ✅ chỉ dùng user mới nhất
+        // 🔟 Truyền dữ liệu sang view
+        model.addAttribute("user", user);
         model.addAttribute("availableBalance", user.getCredit_limit());
+
+        // danh sách hóa đơn
         model.addAttribute("unpaidBills", unpaidBills);
         model.addAttribute("paidBills", paidBills);
-        model.addAttribute("nextUnpaid", nextUnpaid);
-        model.addAttribute("currentBills", currentBills); return "user/SpayLater"; }
+
+        // nhóm chưa trả
+        model.addAttribute("groupedUnpaidBills", groupedUnpaidBills);
+        model.addAttribute("principalByGroup", principalByGroup);
+        model.addAttribute("feeByGroup", feeByGroup);
+        model.addAttribute("lateFeeByGroup", lateFeeByGroup);
+        model.addAttribute("grandTotalByGroup", grandTotalByGroup);
+        model.addAttribute("nextUnpaidGroup", nextUnpaidGroup);
+        model.addAttribute("hasNextUnpaid", !nextUnpaidGroup.isEmpty());
+
+        // nhóm đã trả (giống logic UNPAID)
+        model.addAttribute("groupedPaidBills", groupedPaidBills);
+        model.addAttribute("principalByPaidGroup", principalByPaidGroup);
+        model.addAttribute("feeByPaidGroup", feeByPaidGroup);
+        model.addAttribute("lateFeeByPaidGroup", lateFeeByPaidGroup);
+        model.addAttribute("grandTotalByPaidGroup", grandTotalByPaidGroup);
+
+        // tổng tiền kỳ hiện tại
+        model.addAttribute("currentBills",
+                new CurrentBillSummary(totalToPay, totalFee, totalLateFee, unpaidBills));
+
+        return "user/SpayLater";
+    }
+
 
 
     // ✅ Trả sau: cũng TRỪ HÀNG
@@ -457,20 +558,37 @@ public class PaymentController {
 
 
     // Trả từng kỳ qua VNPay
-    @GetMapping("/bills/{id}/pay")
-    public String payInstallmentViaVNPay(@PathVariable Long id,
-                                         HttpServletRequest request,
-                                         RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
-        Installment installment = installmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Installment not found"));
-        if (installment.isPaid()) {
-            redirectAttributes.addFlashAttribute("error", "This installment is already paid.");
+    @GetMapping("/bills/pay/{no}")
+    public String payFullInstallment(@PathVariable("no") Long installmentNo,
+                                     HttpServletRequest request,
+                                     RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
+
+        // Lấy tất cả installments trong cùng đợt
+        List<Installment> installments = installmentRepository.findUnpaidByInstallmentNo(installmentNo);
+        if (installments.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "No unpaid installments found for this batch.");
             return "redirect:/user/spay-later";
         }
 
-        BigDecimal amount = installment.getAmount();
+        // Tính tổng các khoản
+        BigDecimal principal = installments.stream()
+                .map(Installment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal fee = principal.multiply(BigDecimal.valueOf(0.02)); // 2% phí
+        BigDecimal lateFee = installments.stream()
+                .map(i -> i.getLate_fee() == null ? BigDecimal.ZERO : i.getLate_fee())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalAmount = principal.add(fee).add(lateFee);
+
+        // Gửi sang VNPay
         String ip = request.getRemoteAddr();
-        String url = vnPayService.createOrder(amount.intValue(), "installment:" + installment.getId(), ip);
+        String orderInfo = "installment:" + installmentNo;
+        String url = vnPayService.createOrder(totalAmount.intValue(), orderInfo, ip);
+
         return "redirect:" + url;
     }
+
+
 }

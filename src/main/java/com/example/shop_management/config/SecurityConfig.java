@@ -44,7 +44,7 @@ public class SecurityConfig {
         http
                 // Cho phép truy cập public vào 1 số URL
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/login", "/css/**", "/js/**", "/fonts/**", "/image/**", "/libs/**").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login", "/css/**", "/js/**", "/fonts/**", "/images/**", "/libs/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/user/**").hasAnyRole("USER")
                         .anyRequest().authenticated()

@@ -17,6 +17,7 @@ public interface OrderHistoryRepository extends JpaRepository<OrderHistory, Long
 
     @Query("""
     SELECT new com.example.shop_management.DTO.OrderHistoryDTO(
+        orh.id,
         u.username,
         orh.total_amount,
         a.addressLine,

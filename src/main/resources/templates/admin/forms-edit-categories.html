@@ -270,6 +270,9 @@
         <!--end Rightbar/offcanvas-->
         <!--end Rightbar-->
         <!--Start Footer-->
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <span th:text="${success}"></span>
+        </div>
 
         <div th:if="${error}" class="alert alert-danger" role="alert">
             <span th:text="${error}"></span>

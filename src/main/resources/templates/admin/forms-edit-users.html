@@ -273,6 +273,13 @@
         <!--end Rightbar-->
         <!--Start Footer-->
 
+        <div th:if="${error}" class="alert alert-danger" role="alert">
+            <span th:text="${error}"></span>
+        </div>
+        <div th:if="${success}" class="alert alert-success" role="alert">
+            <span th:text="${success}"></span>
+        </div>
+
         <div class="container mt-4">
             <div class="row">
                 <div class="col-lg-5 col-md-6"> <!-- form nhỏ hơn, nằm bên trái -->

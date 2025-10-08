@@ -99,21 +99,38 @@ public class UserController {
     public String updateUser(@PathVariable Long id,
                              @ModelAttribute User user,
                              RedirectAttributes redirectAttributes) {
-        user.setUsername(user.getUsername());
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setFull_name(user.getFull_name());
-        user.setEmail(user.getEmail());
-        user.setPhone_number(user.getPhone_number());
-        user.setCredit_limit(user.getCredit_limit());
-        user.setRoles(user.getRoles());
-        user.setStatus(user.getStatus());
-        user.setCreatedAt(LocalDateTime.now()); // cái này nếu muốn giữ createdAt gốc thì không set lại
-        user.setUpdatedAt(LocalDateTime.now());
-        userService.updateUser(id, user);
+
+        // Kiểm tra username đã tồn tại hay chưa
+        User existingUser = userRepository.findByUsername1(user.getUsername());
+        if (existingUser != null && !existingUser.getId().equals(id)) {
+            redirectAttributes.addFlashAttribute("error", "Username already exists!");
+            return "redirect:/edit-user/" + id;
+        }
+
+        // Lấy user hiện có để giữ lại các giá trị cũ
+        User oldUser = userService.getUserById(id);
+        if (oldUser == null) {
+            redirectAttributes.addFlashAttribute("error", "User not found!");
+            return "redirect:/list-user";
+        }
+
+        // Cập nhật thông tin
+        oldUser.setUsername(user.getUsername());
+        oldUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        oldUser.setFull_name(user.getFull_name());
+        oldUser.setEmail(user.getEmail());
+        oldUser.setPhone_number(user.getPhone_number());
+        oldUser.setCredit_limit(user.getCredit_limit());
+        oldUser.setRoles(user.getRoles());
+        oldUser.setStatus(user.getStatus());
+        oldUser.setUpdatedAt(LocalDateTime.now());
+
+        userService.updateUser(id, oldUser);
 
         redirectAttributes.addFlashAttribute("success", "User updated successfully!");
         return "redirect:/list-user";
     }
+
 
     // Xóa user
     @GetMapping("/delete-user/{id}")

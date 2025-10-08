@@ -1,10 +1,11 @@
 package com.example.shop_management.DTO;
 
-import org.w3c.dom.Text;
 
 import java.math.BigDecimal;
 
 public class OrderHistoryDTO {
+
+    private Long id;
 
     private String username;
     private String order_items;
@@ -17,9 +18,10 @@ public class OrderHistoryDTO {
     private String address;
     private BigDecimal total_amount;
 
-    public OrderHistoryDTO(String username, BigDecimal total_amount, String address,
+    public OrderHistoryDTO(Long id, String username, BigDecimal total_amount, String address,
                            com.example.shop_management.Enum.PaymentMethod payment_method,
                            Integer shipping_status, Integer status, String order_items) {
+        this.id = id;
         this.username = username;
         this.total_amount = total_amount;
         this.address = address;
@@ -29,6 +31,14 @@ public class OrderHistoryDTO {
         this.order_items = order_items;
     }
 
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getUsername() {
         return username;

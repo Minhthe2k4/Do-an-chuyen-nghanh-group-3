@@ -293,6 +293,14 @@
                             </div><!--end row-->
                         </div><!--end card-header-->
 
+                        <div th:if="${success}" class="alert alert-success" role="alert">
+                            <span th:text="${success}"></span>
+                        </div>
+
+                        <div th:if="${error}" class="alert alert-danger" role="alert">
+                            <span th:text="${error}"></span>
+                        </div>
+
                         <div class="card-body p-4">
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle text-center mb-0" id="datatable_1">
@@ -314,7 +322,6 @@
                                         <!-- User -->
                                         <td>
                         <span class="fw-semibold text-dark">
-                            <i class="las la-user-circle text-primary me-1"></i>
                             <span th:text="${order.username}"></span>
                         </span>
                                         </td>
@@ -371,7 +378,7 @@
 
                                         <!-- Action -->
                                         <td class="text-end">
-                                            <a href="#" class="text-decoration-none me-2" title="Edit">
+                                            <a th:href="@{'/admin/ecommerce-order/edit-order/' + ${order.id}}" class="text-decoration-none me-2" title="Edit">
                                                 <i class="las la-pen text-primary fs-18"></i>
                                             </a>
                                         </td>

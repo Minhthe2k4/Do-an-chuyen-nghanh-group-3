@@ -28,6 +28,12 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
     List<Installment> findByPaymentId(@Param("paymentId") Long paymentId);
 
 
+    // 🔹 Lấy tất cả các installment chưa trả trong cùng một đợt (installment_no)
+    @Query("SELECT i FROM Installment i WHERE i.installment_no = :installmentNo AND i.paid = false")
+    List<Installment> findUnpaidByInstallmentNo(@Param("installmentNo") Long installmentNo);
+
+
+
 
 }
 
