@@ -223,28 +223,43 @@
             </div><!--end row-->
             <div class="row">
                 <div class="col-md-4">
-                    <div class="card mini-stats-wid">
-                        <div class="card-body">
-                            <h4 class="mb-0" th:text="${totalRevenue} + ' VND'">0</h4>
-                            <p class="text-muted mb-0">Total revenue</p>
+                    <div class="card mini-stats-wid shadow-sm border-0 rounded-3">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-coins fa-2x text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1" th:text="${totalRevenue} + ' VND'">0</h4>
+                                <p class="text-muted mb-0">Total revenue</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-4">
-                    <div class="card mini-stats-wid">
-                        <div class="card-body">
-                            <h4 class="mb-0" th:text="${totalOrders}">0</h4>
-                            <p class="text-muted mb-0">Total order</p>
+                    <div class="card mini-stats-wid shadow-sm border-0 rounded-3">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-shopping-cart fa-2x text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1" th:text="${totalOrders}">0</h4>
+                                <p class="text-muted mb-0">Total orders</p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-4">
-                    <div class="card mini-stats-wid">
-                        <div class="card-body">
-                            <h4 class="mb-0" th:text="${totalCustomers}">0</h4>
-                            <p class="text-muted mb-0">Total customer</p>
+                    <div class="card mini-stats-wid shadow-sm border-0 rounded-3">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-users fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-1" th:text="${totalCustomers}">0</h4>
+                                <p class="text-muted mb-0">Total customers</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -256,20 +271,6 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <h4 class="card-title">Monthly revenue</h4>
-                        </div><!--end col-->
-                        <div class="col-auto">
-                            <div class="dropdown">
-                                <a href="#" class="btn btn-sm btn-outline-light dropdown-toggle"
-                                   data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    This Year<i class="las la-angle-down ms-1"></i>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <a class="dropdown-item" href="#">Today</a>
-                                    <a class="dropdown-item" href="#">Last Week</a>
-                                    <a class="dropdown-item" href="#">Last Month</a>
-                                    <a class="dropdown-item" href="#">This Year</a>
-                                </div>
-                            </div>
                         </div><!--end col-->
                     </div>  <!--end row-->
 

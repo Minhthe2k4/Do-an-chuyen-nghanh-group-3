@@ -49,80 +49,85 @@
 
 
                                 <!-- Form login -->
-                                <form class="my-4" th:action="@{/perform_login}" method="post" id="loginForm" novalidate>
-                                    <div class="form-group mb-2">
-                                        <label class="form-label" for="username">Username</label>
+                                <form class="my-4 p-4 shadow-sm rounded bg-white" th:action="@{/perform_login}"
+                                      method="post" id="loginForm" novalidate>
+                                    <h4 class="mb-4 text-center">Login to Your Account</h4>
+
+                                    <!-- Username -->
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Username</label>
                                         <input type="text" class="form-control" id="username" name="username"
-                                               placeholder="Enter username" required>
-                                        <small class="text-danger d-none" id="usernameError">Tên đăng nhập không được bỏ trống</small>
+                                               placeholder="Enter your username" required>
+                                        <div class="invalid-feedback" id="usernameError">
+                                            Username cannot be empty
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label class="form-label" for="password">Password</label>
+                                    <!-- Password -->
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
                                         <input type="password" class="form-control" name="password" id="password"
-                                               placeholder="Enter password" required
-                                               pattern=".{8,}"
-                                               title="Mật khẩu phải có ít nhất 8 ký tự"
-                                        >
-                                        <small class="text-danger d-none" id="passwordError">
-                                            Mật khẩu phải ít nhất 8 kí tự
-                                        </small>
-                                    </div>
-
-                                    <div class="form-group row mt-3">
-                                        <div class="col-sm-6">
-                                            <div class="form-check form-switch form-switch-primary">
-                                                <input class="form-check-input" type="checkbox" id="remember-me">
-                                                <label class="form-check-label" for="remember-me">Remember me</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 text-end">
-                                            <a href="#" class="text-muted font-13"><i class="dripicons-lock"></i> Forgot password?</a>
+                                               placeholder="Enter your password" required pattern=".{8,}"
+                                               title="Password must be at least 8 characters">
+                                        <div class="invalid-feedback" id="passwordError">
+                                            Password must be at least 8 characters
                                         </div>
                                     </div>
 
-                                    <div class="form-group mb-0 row">
-                                        <div class="col-12">
-                                            <div class="d-grid mt-3">
-                                                <!-- PHẢI để type="submit" để Spring Security bắt form -->
-                                                <button class="btn btn-primary" type="submit">
-                                                    Log In <i class="fas fa-sign-in-alt ms-1"></i>
-                                                </button>
-                                            </div>
+                                    <!-- Remember me + Forgot password -->
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="remember-me">
+                                            <label class="form-check-label" for="remember-me">Remember me</label>
                                         </div>
+                                        <a href="#" class="text-decoration-none small"><i class="dripicons-lock"></i>
+                                            Forgot password?</a>
                                     </div>
+
+                                    <!-- Submit button -->
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            Log In <i class="fas fa-sign-in-alt ms-1"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Optional: Divider -->
+                                    <hr class="my-4">
+
+                                    <div class="text-center mb-2">
+                                        <p class="text-muted">
+                                            Don't have an account?
+                                            <a th:href="@{/auth/register}" class="text-primary ms-2">Free Register</a>
+                                        </p>
+                                    </div>
+
+                                    <script>
+                                        document.getElementById("loginForm").addEventListener("submit", function (e) {
+        let valid = true;
+
+        const username = document.getElementById("username");
+        const password = document.getElementById("password");
+
+        // reset lỗi
+        document.querySelectorAll(".invalid-feedback").forEach(el => el.style.display = "none");
+
+        // Username
+        if (!username.value.trim()) {
+            document.getElementById("usernameError").style.display = "block";
+            valid = false;
+        }
+
+        // Password
+        if (!password.value.trim() || password.value.length < 8) {
+            document.getElementById("passwordError").style.display = "block";
+            valid = false;
+        }
+
+        if (!valid) e.preventDefault();
+    });
+
+                                    </script>
                                 </form>
-
-                                <script>
-                                    document.getElementById("loginForm").addEventListener("submit", function (e) {
-                                        let valid = true;
-
-                                        const username = document.getElementById("username");
-                                        const password = document.getElementById("password");
-
-                                        // reset lỗi
-                                        document.querySelectorAll("small.text-danger").forEach(el => el.classList.add("d-none"));
-
-                                        if (!username.value.trim()) {
-                                            document.getElementById("usernameError").classList.remove("d-none");
-                                            valid = false;
-                                        }
-
-                                        if (!password.checkValidity()) {
-                                            document.getElementById("passwordError").classList.remove("d-none");
-                                            valid = false;
-                                        }
-
-                                        if (!valid) e.preventDefault();
-                                    });
-                                </script>
-
-                                <div class="text-center mb-2">
-                                    <p class="text-muted">
-                                        Don't have an account?
-                                        <a th:href="@{/auth/register}" class="text-primary ms-2">Free Register</a>
-                                    </p>
-                                </div>
                             </div><!--end card-body-->
                         </div><!--end card-->
                     </div><!--end col-->
