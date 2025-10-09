@@ -221,7 +221,7 @@
                     <span th:text="${error}"></span>
                 </div>
 
-                <div class="card-body">
+                  <div class="card-body">
                     <form th:action="@{'/admin/ecommerce-order/edit-order/' + ${order.id}}"
                           method="post"
                           th:object="${order}"

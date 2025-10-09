@@ -1,8 +1,10 @@
 package com.example.shop_management.controller.admin;
 
 import com.example.shop_management.DTO.OrderHistoryDTO;
+import com.example.shop_management.model.Installment;
 import com.example.shop_management.model.OrderHistory;
 import com.example.shop_management.model.User;
+import com.example.shop_management.repository.InstallmentRepository;
 import com.example.shop_management.repository.OrderHistoryRepository;
 import com.example.shop_management.repository.UserRepository;
 import com.example.shop_management.service.OrderHistoryService;
@@ -28,6 +30,7 @@ public class OrderAdminController {
 
     @Autowired
     private UserRepository userRepository;
+
 
     //Hiện thông tin đơn hàng cho Admin
     @GetMapping
@@ -58,6 +61,7 @@ public class OrderAdminController {
             model.addAttribute("order", order);
             return "admin/forms-edit-orders";
         }
+
 
         // Xử lý cập nhật sản phẩm
         @PostMapping("/edit-order/{id}")

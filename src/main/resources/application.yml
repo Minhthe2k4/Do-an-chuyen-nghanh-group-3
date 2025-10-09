@@ -14,7 +14,7 @@ spring:
             enable: true
 
   datasource:
-    url: jdbc:mysql://localhost:3305/shop_management_2?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3305/shop_management_2?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: "Minhthe2004:)"
     driver-class-name: com.mysql.cj.jdbc.Driver

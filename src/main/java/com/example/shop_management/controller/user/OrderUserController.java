@@ -3,6 +3,7 @@ package com.example.shop_management.controller.user;
 import com.example.shop_management.Enum.PaymentMethod;
 import com.example.shop_management.model.*;
 import com.example.shop_management.repository.*;
+import com.example.shop_management.service.EmailService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,6 +39,9 @@ public class OrderUserController {
 
     @Autowired
     private CartRepository cartRepository;
+
+    @Autowired
+    private EmailService emailService;
 
 
 
@@ -109,7 +113,9 @@ public class OrderUserController {
                 }
             }
 
-            redirectAttributes.addFlashAttribute("success", "The order was deleted successfully");
+            emailService.sendCancelledOrderSuccessEmail(user.getEmail(), orderHistory);
+
+            redirectAttributes.addFlashAttribute("success", "The order was cancelled successfully");
 
         } catch (Exception e) {
             e.printStackTrace();

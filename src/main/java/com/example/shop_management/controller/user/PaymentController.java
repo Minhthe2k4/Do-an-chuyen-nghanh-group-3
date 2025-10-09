@@ -170,10 +170,15 @@ public class PaymentController {
         payment.setPaid_at(LocalDateTime.now());
         paymentRepository.save(payment);
 
+
+        try {
+            emailService.sendOrderSuccessEmailViaCOD(user.getEmail(), order);
+        } catch (Exception ignored) {}
+
         // Xóa giỏ hàng
         cartItemRepository.deleteAll(cartItems);
 
-        redirectAttributes.addFlashAttribute("success", "Paid successfully");
+        redirectAttributes.addFlashAttribute("success", "Ordered successfully");
 
         return "redirect:/user/home";
     }
@@ -192,6 +197,11 @@ public class PaymentController {
     @GetMapping("/payment-return")
     @Transactional
     public String paymentResult(HttpSession session,
+                                @RequestParam String province_name,
+                                @RequestParam String district_name,
+                                @RequestParam String ward_name,
+                                @RequestParam String addressLine,
+                                @RequestParam String postalCode,
                                 HttpServletRequest request,
                                 RedirectAttributes redirectAttributes,
                                 @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal)
@@ -300,14 +310,22 @@ public class PaymentController {
                 .map(ci -> ci.getProduct().getItem_name() + " x" + ci.getQuantity())
                 .collect(Collectors.joining(", "));
 
-        // ✅ Lấy địa chỉ giao hàng mới nhất
-        Address latestAddress = addressRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
-                .orElseThrow(() -> new RuntimeException("No address found for user"));
+        // 🔹 2. Tạo địa chỉ giao hàng
+        Address address = new Address();
+        address.setUser(user);
+        address.setAddressLine(addressLine);
+        address.setPostalCode(postalCode);
+        address.setProvince_name(province_name);
+        address.setDistrict_name(district_name);
+        address.setWard_name(ward_name);
+        address.setCreatedAt(LocalDateTime.now());
+        address.setUpdatedAt(LocalDateTime.now());
+        addressRepository.save(address);
 
 // ✅ Tạo order có địa chỉ
         OrderHistory order = new OrderHistory();
         order.setUser(user);
-        order.setAddress(latestAddress);
+        order.setAddress(address);
         order.setTotal_amount(total);
         order.setOrder_items(orderItems);
         order.setShipping_status(0);
@@ -471,6 +489,11 @@ public class PaymentController {
     @GetMapping("/spay-later/checkout")
     @Transactional
     public String paymentSpayLater(@RequestParam("period") int period,
+                                   @RequestParam String province_name,
+                                   @RequestParam String district_name,
+                                   @RequestParam String ward_name,
+                                   @RequestParam String addressLine,
+                                   @RequestParam String postalCode,
                                    HttpSession session,
                                    RedirectAttributes redirectAttributes) {
         User user = (User) session.getAttribute("user");
@@ -524,18 +547,26 @@ public class PaymentController {
         user.setCredit_limit(user.getCredit_limit().subtract(orderAmount));
         userRepository.save(user);
 
-        // ✅ Lấy địa chỉ giao hàng mới nhất
-        Address latestAddress = addressRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
-                .orElseThrow(() -> new RuntimeException("No address found for user"));
+        // 🔹 2. Tạo địa chỉ giao hàng
+        Address address = new Address();
+        address.setUser(user);
+        address.setAddressLine(addressLine);
+        address.setPostalCode(postalCode);
+        address.setProvince_name(province_name);
+        address.setDistrict_name(district_name);
+        address.setWard_name(ward_name);
+        address.setCreatedAt(LocalDateTime.now());
+        address.setUpdatedAt(LocalDateTime.now());
+        addressRepository.save(address);
 
         // ✅ Tạo order có địa chỉ
         OrderHistory order = new OrderHistory();
         order.setUser(user);
-        order.setAddress(latestAddress); // ✅ FIX: thêm địa chỉ giao hàng
+        order.setAddress(address); // ✅ FIX: thêm địa chỉ giao hàng
         order.setTotal_amount(orderAmount);
         order.setShipping_status(0);
         order.setOrder_items(orderItems);
-        order.setStatus(1);
+        order.setStatus(0);
         order.setCreated_at(LocalDateTime.now());
         order.setUpdated_at(LocalDateTime.now());
         order = orderHistoryRepository.save(order);
@@ -548,6 +579,8 @@ public class PaymentController {
         payment = paymentRepository.save(payment);
 
         spayLaterService.createInstallments(payment, period);
+
+        emailService.sendOrderSuccessEmailViaSpayLater(user.getEmail(), order);
 
         // Xóa giỏ
         cartItemRepository.deleteAll(cartItems);

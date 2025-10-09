@@ -238,10 +238,10 @@
             <div th:if="${error}" class="alert alert-danger" role="alert">
                 <span th:text="${error}"></span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle" id="datatable_1">
-                        <thead class="table-light text-center align-middle">
+                    <table class="table table-hover align-middle text-center mb-0" id="datatable_1">
+                        <thead class="table-light">
                         <tr>
                             <th>🛍️ Items</th>
                             <th>💰 Total Amount (₫)</th>
@@ -293,8 +293,8 @@
                             <td>
                                 <a th:href="@{/user/myorder/delete/{id}(id=${orderhistory.id})}"
                                    class="btn btn-sm btn-outline-danger"
-                                   onclick="return confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')">
-                                    ❌ Xóa
+                                   onclick="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')">
+                                    ❌ Hủy
                                 </a>
                             </td>
                         </tr>
@@ -302,39 +302,35 @@
                     </table>
                 </div>
             </div>
+            </div>
 
             <footer class="footer text-center text-sm-start d-print-none">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card mb-0 border-bottom-0 rounded-bottom-0">
-                            <div class="card-body">
-                                <p class="text-muted mb-0">
-                                    ©
-                                    <script> document.write(new Date().getFullYear()) </script>
-                                    Dastone
-                                    <span class="text-muted d-none d-sm-inline-block float-end">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-0 border-bottom-0 rounded-bottom-0">
+                                <div class="card-body">
+                                    <p class="text-muted mb-0">
+                                        ©
+                                        <script> document.write(new Date().getFullYear()) </script>
+                                        Dastone
+                                        <span class="text-muted d-none d-sm-inline-block float-end">
                                     Design with
                                     <i class="iconoir-heart-solid text-danger align-middle"></i>
                                     by Group 3</span>
-                                </p>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </footer>
-    </div> <!-- end col -->
-</div> <!-- end row --><!-- container -->
-<!--end footer-->
+            </footer>
+        </div> <!-- end col -->
+    </div> <!-- end row --><!-- container -->
+    <!--end footer-->
 
-<script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="/libs/simplebar/simplebar.min.js"></script>
-
-<script src="/libs/apexcharts/apexcharts.min.js"></script>
-<script src="../../../apexcharts.com/samples/assets/stock-prices.js"></script>
-<script src="/js/pages/index.init.js"></script>
-<script src="/js/app.js"></script>
+    <script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/libs/simplebar/simplebar.min.js"></script>
 </body>
 <!--end body-->
 

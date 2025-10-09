@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +32,10 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
     // 🔹 Lấy tất cả các installment chưa trả trong cùng một đợt (installment_no)
     @Query("SELECT i FROM Installment i WHERE i.installment_no = :installmentNo AND i.paid = false")
     List<Installment> findUnpaidByInstallmentNo(@Param("installmentNo") Long installmentNo);
+
+
+    @Query("SELECT i FROM Installment i WHERE i.paid = false AND DATE(i.due_date) = :targetDate")
+    List<Installment> findInstallmentsDueOn(LocalDate targetDate);
 
 
 
