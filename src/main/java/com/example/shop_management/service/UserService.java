@@ -55,7 +55,7 @@ public class UserService {
     public User updateUser(Long id, User updateUser) {
         User existingUser = getUserById(id);
         existingUser.setUsername(updateUser.getUsername());
-        existingUser.setPassword(passwordEncoder.encode(updateUser.getPassword()));
+        existingUser.setPassword(updateUser.getPassword());
         existingUser.setRoles(updateUser.getRoles());
         existingUser.setStatus(updateUser.getStatus());
         existingUser.setFull_name(updateUser.getFull_name());
