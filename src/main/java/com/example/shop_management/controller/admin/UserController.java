@@ -66,7 +66,12 @@ public class UserController {
             return "redirect:/list-user";
         }
         user.setFull_name(user.getFull_name());
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        //Chỉ encode khi có mật khẩu mới
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        }
+        
         user.setFull_name(user.getFull_name());
         user.setEmail(user.getEmail());
         user.setPhone_number(user.getPhone_number());
