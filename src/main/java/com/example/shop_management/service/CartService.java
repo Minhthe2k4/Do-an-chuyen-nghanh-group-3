@@ -32,12 +32,12 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // 🔹 Kiểm tra tồn kho
+        // Kiểm tra tồn kho
         if (quantity > product.getStock_quantity()) {
             throw new RuntimeException("Not enough stock. Only " + product.getStock_quantity() + " left.");
         }
 
-        // 🔹 Lấy hoặc tạo Cart
+        // Lấy hoặc tạo Cart
         Cart cart = cartRepository.findByUser(user)
                 .orElseGet(() -> {
                     Cart c = new Cart();
@@ -47,7 +47,7 @@ public class CartService {
                     return cartRepository.save(c);
                 });
 
-        // 🔹 Lấy hoặc tạo CartItem
+        //Lấy hoặc tạo CartItem
         CartItem cartItem = cartItemRepository.findByCartAndProduct(cart, product)
                 .orElseGet(() -> {
                     CartItem ci = new CartItem();

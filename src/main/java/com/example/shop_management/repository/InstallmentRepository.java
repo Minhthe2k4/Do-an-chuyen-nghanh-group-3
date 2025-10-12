@@ -14,9 +14,8 @@ import java.util.Optional;
 public interface InstallmentRepository extends JpaRepository<Installment, Long> {
 
 
-
-        @Query("SELECT i FROM Installment i WHERE i.payment.orderhistory.user.id = :userId")
-        List<Installment> findByUserId(@Param("userId") Long userId);
+    @Query("SELECT i FROM Installment i WHERE i.payment.orderhistory.user.id = :userId")
+    List<Installment> findByUserId(@Param("userId") Long userId);
 
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM Installment i " +
             "JOIN i.payment p " +
@@ -29,16 +28,30 @@ public interface InstallmentRepository extends JpaRepository<Installment, Long> 
     List<Installment> findByPaymentId(@Param("paymentId") Long paymentId);
 
 
-    // 🔹 Lấy tất cả các installment chưa trả trong cùng một đợt (installment_no)
-    @Query("SELECT i FROM Installment i WHERE i.installment_no = :installmentNo AND i.paid = false")
-    List<Installment> findUnpaidByInstallmentNo(@Param("installmentNo") Long installmentNo);
+    // Lấy tất cả các installment chưa trả trong cùng một đợt (installment_no) theo user
+    @Query("""
+                SELECT i FROM Installment i
+                WHERE i.installment_no = :installmentNo
+                  AND i.paid = false
+                  AND i.payment.orderhistory.user.id = :userId
+            """)
+    List<Installment> findUnpaidByInstallmentNoAndUser(
+            @Param("installmentNo") Long installmentNo,
+            @Param("userId") Long userId
+    );
+
+
+    // Lấy tất cả installments chưa thanh toán của user (bất kể kỳ nào)
+    @Query("""
+                SELECT i FROM Installment i
+                WHERE i.paid = false
+                  AND i.payment.orderhistory.user.id = :userId
+            """)
+    List<Installment> findAllUnpaidByUser(@Param("userId") Long userId);
 
 
     @Query("SELECT i FROM Installment i WHERE i.paid = false AND DATE(i.due_date) = :targetDate")
     List<Installment> findInstallmentsDueOn(LocalDate targetDate);
-
-
-
 
 }
 

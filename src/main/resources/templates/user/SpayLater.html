@@ -305,47 +305,76 @@
                                 <div class="tab-pane fade show active" id="unpaid" role="tabpanel">
                                     <p class="text-muted small mb-2">Upcoming payments</p>
 
-                                    <!-- Nếu có nhóm gần nhất chưa trả -->
-                                    <div th:if="${!#lists.isEmpty(nextUnpaidGroup)}"
-                                         class="border rounded bg-white shadow-sm p-3 mb-3">
-                                        <h6 class="fw-semibold text-primary mb-2">
-                                            <i class="fas fa-clock me-1"></i>
-                                            Next Payment (Due by
-                                            <span th:text="${#temporals.format(nextUnpaidGroup[0].due_date, 'dd/MM/yyyy')}"></span>)
-                                        </h6>
+                                    <!-- ✅ Hiển thị TẤT CẢ các nhóm chưa trả (không chỉ next) -->
+                                    <div th:if="${!#maps.isEmpty(groupedUnpaidBills)}">
+                                        <div th:each="entry : ${groupedUnpaidBills.entrySet()}"
+                                             class="border rounded bg-white shadow-sm p-3 mb-3"
+                                             th:classappend="${entryStat.first} ? 'border-primary border-2' : ''">
 
-                                        <!-- Danh sách đơn trong nhóm -->
-                                        <ul class="list-group mb-2">
-                                            <li class="list-group-item d-flex justify-content-between align-items-center"
-                                                th:each="bill : ${nextUnpaidGroup}">
-                                                <span th:text="'Order #' + ${bill.payment.orderhistory.id}"></span>
-                                                <span th:text="${#numbers.formatDecimal(bill.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
-                                                      class="fw-semibold"></span>
-                                            </li>
-                                        </ul>
+                                            <!-- Tiêu đề: Đánh dấu đợt tiếp theo -->
+                                            <h6 class="fw-semibold mb-2"
+                                                th:classappend="${entryStat.first} ? 'text-primary' : 'text-secondary'">
+                                                <i class="fas fa-clock me-1"></i>
+                                                <span th:if="${entryStat.first}">Next Payment - </span>
+                                                Installment <span th:text="${entry.key}"></span>
+                                                (Due by <span th:text="${#temporals.format(entry.value[0].due_date, 'dd/MM/yyyy')}"></span>)
+                                            </h6>
 
-                                        <!-- Tổng tiền của nhóm -->
-                                        <div class="d-flex justify-content-between">
-                                            <span>Total (incl. 2% fee & late fee):</span>
-                                            <strong class="text-danger"
-                                                    th:text="${#numbers.formatDecimal(grandTotalByGroup[nextUnpaidGroup[0].installment_no],
-                        0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                                            <!-- Danh sách đơn trong nhóm -->
+                                            <ul class="list-group mb-2">
+                                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                                    th:each="bill : ${entry.value}">
+                                                    <span th:text="'Order #' + ${bill.payment.orderhistory.id}"></span>
+                                                    <span th:text="${#numbers.formatDecimal(bill.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                                          class="fw-semibold"></span>
+                                                </li>
+
+                                                <!-- ✅ Hiển thị phí 2.95% CỦA NHÓM NÀY (từ feeByGroup) -->
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>Installment Fee (2.95%)</span>
+                                                    <span th:text="${#numbers.formatDecimal(feeByGroup[entry.key], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                                          class="fw-semibold text-warning"></span>
+                                                </li>
+
+                                                <!-- ✅ Hiển thị phí trễ hạn CỦA NHÓM NÀY -->
+                                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                                    th:if="${lateFeeByGroup[entry.key] != null and lateFeeByGroup[entry.key] > 0}">
+                                                    <span>Late Fee</span>
+                                                    <span th:text="${#numbers.formatDecimal(lateFeeByGroup[entry.key], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                                          class="fw-semibold text-danger"></span>
+                                                </li>
+                                            </ul>
+
+                                            <!-- ✅ Tổng tiền của nhóm này -->
+                                            <div class="d-flex justify-content-between border-top pt-2">
+                                                <span>Total for this installment:</span>
+                                                <strong class="text-danger"
+                                                        th:text="${#numbers.formatDecimal(grandTotalByGroup[entry.key], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
+                                            </div>
+
+                                            <!-- ✅ Nút thanh toán: Chỉ hiển thị cho đợt đến hạn hoặc quá hạn -->
+                                            <form th:if="${entry.value[0].due_date != null and
+                    (entry.value[0].due_date.toLocalDate().isBefore(T(java.time.LocalDate).now()) or
+                     entry.value[0].due_date.toLocalDate().isEqual(T(java.time.LocalDate).now()))}"
+                                                  th:action="@{/user/bills/pay/{no}(no=${entry.key})}"
+                                                  method="get">
+                                                <button type="submit" class="btn btn-success btn-sm mt-2 w-100">
+                                                    <i class="fas fa-money-bill-wave me-1"></i> Pay This Installment
+                                                </button>
+                                            </form>
+
+                                            <!-- ✅ Thông báo nếu chưa đến hạn -->
+                                            <div th:if="${entry.value[0].due_date != null and
+                    entry.value[0].due_date.toLocalDate().isAfter(T(java.time.LocalDate).now())}"
+                                                 class="alert alert-info small mb-0 mt-2">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Payment available from <span th:text="${#temporals.format(entry.value[0].due_date, 'dd/MM/yyyy')}"></span>
+                                            </div>
                                         </div>
-
-                                        <form th:if="${nextUnpaidGroup[0].due_date != null and
-            (nextUnpaidGroup[0].due_date.toLocalDate().isBefore(T(java.time.LocalDate).now())
-            or nextUnpaidGroup[0].due_date.toLocalDate().isEqual(T(java.time.LocalDate).now()))}"
-                                              th:action="@{/user/bills/pay/{no}(no=${nextUnpaidGroup[0].installment_no})}"
-                                              method="get">
-                                            <button type="submit" class="btn btn-success btn-sm mt-2">
-                                                <i class="fas fa-money-bill-wave me-1"></i> Pay Now
-                                            </button>
-                                        </form>
-
                                     </div>
 
                                     <!-- Nếu không có kỳ chưa trả -->
-                                    <div th:if="${#lists.isEmpty(nextUnpaidGroup)}"
+                                    <div th:if="${#maps.isEmpty(groupedUnpaidBills)}"
                                          class="alert alert-success text-center">
                                         <i class="fas fa-check-circle me-2"></i> You have no unpaid installments 🎉
                                     </div>
@@ -357,7 +386,6 @@
 
                                     <!-- Nếu có hóa đơn đã trả -->
                                     <div th:if="${!#lists.isEmpty(paidBills)}">
-
                                         <!-- ✅ Gom nhóm theo kỳ trả góp (installment_no) -->
                                         <div th:each="entry : ${groupedPaidBills.entrySet()}"
                                              class="border rounded bg-white shadow-sm p-3 mb-3">
@@ -365,7 +393,7 @@
                                             <!-- Tiêu đề mỗi đợt -->
                                             <h6 class="fw-semibold text-success mb-2">
                                                 <i class="fas fa-check-circle me-1"></i>
-                                                Installment <span th:text="${entry.key}"></span>
+                                                Installment batch id: <span th:text="${entry.key}"></span>
                                             </h6>
 
                                             <!-- Danh sách đơn trong nhóm -->
@@ -373,30 +401,44 @@
                                                 <li class="list-group-item d-flex justify-content-between align-items-center"
                                                     th:each="bill : ${entry.value}">
                                                     <div>
-                                                        <span th:text="'Order #' + ${bill.payment.orderhistory.id}"
-                                                              class="fw-semibold"></span><br>
+                            <span th:text="'Order #' + ${bill.payment.orderhistory.id}"
+                                  class="fw-semibold"></span><br>
                                                         <small class="text-muted"
                                                                th:text="'Paid on ' + ${#temporals.format(bill.paid_at, 'dd/MM/yyyy HH:mm')}"></small>
                                                     </div>
                                                     <span class="fw-semibold text-success"
                                                           th:text="${#numbers.formatDecimal(bill.amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></span>
                                                 </li>
+
+                                                <!-- ✅ Hiển thị phí 2.95% CỦA NHÓM ĐÃ TRẢ NÀY -->
+                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>Installment Fee (2.95%)</span>
+                                                    <span th:text="${#numbers.formatDecimal(feeByPaidGroup[entry.key], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                                          class="fw-semibold text-warning"></span>
+                                                </li>
+
+                                                <!-- ✅ Hiển thị phí trễ hạn CỦA NHÓM ĐÃ TRẢ NÀY (nếu có) -->
+                                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                                    th:if="${lateFeeByPaidGroup[entry.key] != null and lateFeeByPaidGroup[entry.key] > 0}">
+                                                    <span>Late Fee</span>
+                                                    <span th:text="${#numbers.formatDecimal(lateFeeByPaidGroup[entry.key], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"
+                                                          class="fw-semibold text-danger"></span>
+                                                </li>
                                             </ul>
 
+                                            <!-- ✅ Tổng tiền đã trả của nhóm này -->
                                             <div class="d-flex justify-content-between border-top pt-2">
-                                                <span>Total for this installment:</span>
+                                                <span>Total paid for this installment:</span>
                                                 <strong class="text-success"
-                                                        th:text="${#numbers.formatDecimal(
-                grandTotalByPaidGroup[entry.key],
-                0, 'COMMA', 0, 'POINT'
-            )} + ' VNĐ'"></strong>
+                                                        th:text="${#numbers.formatDecimal(grandTotalByPaidGroup[entry.key], 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></strong>
                                             </div>
 
-
-                                            <!-- Ngày thanh toán chung (lấy từ hóa đơn đầu tiên trong nhóm) -->
+                                            <!-- Ngày thanh toán chung -->
                                             <div class="text-end mt-1">
-                                                <small class="text-muted"
-                                                       th:text="'Paid on ' + ${#temporals.format(entry.value[0].paid_at, 'dd/MM/yyyy HH:mm')}"></small>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar-check me-1"></i>
+                                                    Paid on <span th:text="${#temporals.format(entry.value[0].paid_at, 'dd/MM/yyyy HH:mm')}"></span>
+                                                </small>
                                             </div>
                                         </div>
                                     </div>
@@ -406,7 +448,6 @@
                                         <i class="fas fa-info-circle me-2"></i> No paid installments yet.
                                     </div>
                                 </div>
-                            </div>
                         </div>
                     </div>
                     <!-- 🔹 MODAL: CURRENT BILL DETAILS -->
@@ -437,11 +478,6 @@
                                                th:text="${#numbers.formatDecimal(currentBills.total_amount, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
                                         </div>
                                         <div class="col-md-4">
-                                            <h6>Installment Fee:</h6>
-                                            <p class="fw-semibold"
-                                               th:text="${#numbers.formatDecimal(currentBills.total_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
-                                        </div>
-                                        <div class="col-md-4">
                                             <h6>Late Fee:</h6>
                                             <p class="fw-semibold text-danger"
                                                th:text="${#numbers.formatDecimal(currentBills.total_late_fee, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
@@ -458,7 +494,7 @@
                                             <th>Installment No</th>
                                             <th>Order names</th>
                                             <th>Principal</th>
-                                            <th>Fee (2%)</th>
+                                            <th>Fee (2.95%)</th>
                                             <th>Late Fee</th>
                                             <th>Total</th>
                                         </tr>

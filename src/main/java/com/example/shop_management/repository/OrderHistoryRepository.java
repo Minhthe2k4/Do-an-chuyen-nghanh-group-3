@@ -32,7 +32,9 @@ public interface OrderHistoryRepository extends JpaRepository<OrderHistory, Long
     LEFT JOIN orh.address a
 """)
     List<OrderHistoryDTO> getProduct();
+
     Optional<OrderHistory> findTopByUser_IdOrderByIdDesc(Long userId);
+
     @Query("SELECT oh FROM OrderHistory oh JOIN FETCH oh.payment WHERE oh.user.id = :userId")
     List<OrderHistory> findByUserId(@Param("userId") Long userId);
 

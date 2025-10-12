@@ -21,7 +21,7 @@ public class CartController {
     private final CartService cartService;
     private final UserRepository userRepository;
 
-    // 🛒 Hiển thị giỏ hàng
+    // Hiển thị giỏ hàng
     @GetMapping("/cart")
     public String viewCart(Model model,
                            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
@@ -45,7 +45,7 @@ public class CartController {
         return "user/cart";
     }
 
-    // 💳 Hiển thị trang thanh toán
+    // Hiển thị trang thanh toán
     @GetMapping("/cart/checkout")
     public String viewCheckOut(Model model,
                                @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
@@ -70,7 +70,7 @@ public class CartController {
         return "user/checkout";
     }
 
-    // ➕ Thêm sản phẩm vào giỏ
+    // Thêm sản phẩm vào giỏ
     @PostMapping("/cart/add")
     public String addToCart(@RequestParam("itemId") Long itemId,
                             @RequestParam("quantity") int quantity,
@@ -91,7 +91,7 @@ public class CartController {
         return "redirect:/user/list-product";
     }
 
-    // ✏️ Cập nhật số lượng sản phẩm trong giỏ
+    // Cập nhật số lượng sản phẩm trong giỏ
     @PostMapping("/update")
     public String updateCartItem(@RequestParam("itemId") Long itemId,
                                  @RequestParam("quantity") int quantity,
@@ -112,7 +112,7 @@ public class CartController {
         return "redirect:/user/cart";
     }
 
-    // ❌ Xóa sản phẩm khỏi giỏ hàng
+    // Xóa sản phẩm khỏi giỏ hàng
     @GetMapping("/remove/{itemId}")
     public String removeFromCart(@PathVariable("itemId") Long itemId,
                                  Principal principal,

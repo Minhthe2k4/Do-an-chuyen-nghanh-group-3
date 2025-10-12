@@ -26,7 +26,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE LOWER(p.item_name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Product> searchByName(@Param("keyword") String keyword);
 
-    // 🔹 Tìm sản phẩm theo tên item_name (dùng native query cho chắc)
+    // Tìm sản phẩm theo tên item_name (dùng native query cho chắc)
     @Query(value = "SELECT * FROM items WHERE item_name = :itemName LIMIT 1", nativeQuery = true)
     Product findByItemName(@Param("itemName") String itemName);
 

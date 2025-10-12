@@ -28,6 +28,9 @@ public class Installment {
     private boolean paid;
     private LocalDateTime created_at;
     private LocalDateTime paid_at;
+    private BigDecimal paid_fee;
+    private BigDecimal total;
+    private String installment_batch_id;
 
     @PrePersist
     protected void onCreate() {

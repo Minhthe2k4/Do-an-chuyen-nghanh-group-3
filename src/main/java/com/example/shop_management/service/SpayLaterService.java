@@ -5,7 +5,6 @@ import com.example.shop_management.model.Installment;
 import com.example.shop_management.model.Payment;
 import com.example.shop_management.repository.InstallmentRepository;
 import com.example.shop_management.repository.PaymentRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -26,16 +25,21 @@ public class SpayLaterService {
     private final InstallmentRepository installmentRepo;
     private final PaymentRepository paymentRepo;
 
-    private final double CONVERSION_FEE_RATE = 0.0295; // 2.95%
     private final double LATE_FEE = 30000; // 30k/kỳ trễ hạn
+    private final double CONVERSION_FEE_RATE = 0.0295; // 2.95% phí chuyển đổi
 
     /**
      * Tạo các kỳ trả góp khi user chọn SPayLater
+     *Tính 2.95% trên TỔNG, rồi lưu vào DB (mỗi kỳ lưu total = amount + phí_chung)
      */
     public void createInstallments(Payment payment, int installmentCount) {
         BigDecimal totalAmount = payment.getOrderhistory().getTotal_amount();
-        BigDecimal conversionFee = totalAmount.multiply(BigDecimal.valueOf(CONVERSION_FEE_RATE));
 
+        // Tính phí chuyển đổi trên TỔNG (một lần duy nhất)
+        BigDecimal totalConversionFee = totalAmount.multiply(BigDecimal.valueOf(CONVERSION_FEE_RATE))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        // Chia đều tiền gốc
         BigDecimal baseInstallment = totalAmount.divide(
                 BigDecimal.valueOf(installmentCount),
                 2,
@@ -44,12 +48,6 @@ public class SpayLaterService {
 
         BigDecimal accumulated = baseInstallment.multiply(BigDecimal.valueOf(installmentCount));
         BigDecimal remainder = totalAmount.subtract(accumulated);
-
-        BigDecimal feePerInstallment = conversionFee.divide(
-                BigDecimal.valueOf(installmentCount),
-                2,
-                RoundingMode.HALF_UP
-        );
 
         LocalDateTime now = LocalDateTime.now();
         LocalDate baseDate = now.getDayOfMonth() >= 24
@@ -66,7 +64,8 @@ public class SpayLaterService {
             installment.setPayment(payment);
             installment.setInstallment_no((long) i);
 
-            BigDecimal amount = baseInstallment.add(feePerInstallment);
+            // BƯỚC 3: Tính amount cho kỳ này (tiền gốc)
+            BigDecimal amount = baseInstallment;
             if (i == installmentCount && remainder.compareTo(BigDecimal.ZERO) > 0) {
                 amount = amount.add(remainder);
             }
@@ -75,6 +74,11 @@ public class SpayLaterService {
             installment.setLate_fee(BigDecimal.ZERO);
             installment.setDue_date(dueDate);
 
+
+            installment.setTotal(amount.add(totalConversionFee));
+
+
+            installment.setPaid_fee(totalConversionFee);
             installments.add(installment);
             dueDate = dueDate.plusMonths(1);
         }
@@ -83,8 +87,10 @@ public class SpayLaterService {
         payment.setStatus(PaymentStatus.PENDING);
         paymentRepo.save(payment);
     }
+
     /**
      * Áp dụng phí trễ hạn: ghi nhận 30k vào kỳ tiếp theo
+     * ĐÃ BỔ SUNG: Cập nhật lại total khi có late_fee
      */
     @Scheduled(cron = "0 0 0 * * ?", zone = "Asia/Ho_Chi_Minh")
     public void applyLateFeeForOverdueInstallments() {
@@ -109,15 +115,24 @@ public class SpayLaterService {
                         Installment next = paymentInstallments.get(i + 1);
                         BigDecimal newLateFee = next.getLate_fee() == null ? fee : next.getLate_fee().add(fee);
                         next.setLate_fee(newLateFee);
+
+                        //CẬP NHẬT LẠI TOTAL KHI CÓ LATE_FEE
+                        BigDecimal conversionFee = next.getTotal().subtract(next.getAmount());
+                        next.setTotal(next.getAmount().add(conversionFee).add(newLateFee));
+
                         installmentRepo.save(next);
                     } else {
                         BigDecimal newLateFee = current.getLate_fee() == null ? fee : current.getLate_fee().add(fee);
                         current.setLate_fee(newLateFee);
+
+                        // CẬP NHẬT LẠI TOTAL KHI CÓ LATE_FEE
+                        BigDecimal conversionFee = current.getTotal().subtract(current.getAmount());
+                        current.setTotal(current.getAmount().add(conversionFee).add(newLateFee));
+
                         installmentRepo.save(current);
                     }
                 }
             }
         }
     }
-
 }

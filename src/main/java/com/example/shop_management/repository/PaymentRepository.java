@@ -18,7 +18,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrderhistory_Id(Long orderId);
 
-    // 🔹 Tìm payment theo id của OrderHistory
+    // Tìm payment theo id của OrderHistory
     @Query("SELECT p FROM Payment p WHERE p.orderhistory.id = :orderId")
     Payment findByOrderhistoryId(Long orderId);
 

@@ -82,7 +82,7 @@ public class OrderUserController {
             // Lấy thông tin thanh toán
             Payment payment = paymentRepository.findByOrderhistoryId(orderId);
 
-            // ✅ Cộng lại stock dựa vào order_items
+            // Cộng lại stock dựa vào order_items
             String orderItems = orderHistory.getOrder_items(); // VD: "Áo thun x2, Quần jean x1"
             if (orderItems != null && !orderItems.isBlank()) {
                 String[] items = orderItems.split(",\\s*");
@@ -101,10 +101,10 @@ public class OrderUserController {
                 productRepository.flush();
             }
 
-            // ✅ Xóa order của user
+            // Xóa order của user
             orderHistoryRepository.deleteByIdAndUserId(orderId, user.getId());
 
-            // ✅ Nếu thanh toán SPayLater thì cộng lại credit limit
+            // Nếu thanh toán SPayLater thì cộng lại credit limit
             if (payment != null && payment.getPayment_method() == PaymentMethod.SPAY_LATER) {
                 BigDecimal orderAmount = orderHistory.getTotal_amount();
                 if (orderAmount != null) {

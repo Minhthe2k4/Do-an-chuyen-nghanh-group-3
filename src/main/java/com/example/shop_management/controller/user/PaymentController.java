@@ -22,6 +22,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -41,19 +42,12 @@ public class PaymentController {
     private final SpayLaterService spayLaterService;
     private final PaymentRepository paymentRepository;
     private final ProductRepository productRepository;
-
     private final AddressRepository addressRepository;
-    //private final UserRepository userRepository;
-   // private final OrderHistoryRepository orderRepo;
-    //private final PaymentRepository paymentRepo;
-
 
     @Autowired
     private EmailService emailService;
 
-    // ==============================
-    // HIỂN THỊ FORM THANH TOÁN COD
-    // ==============================
+    //Form thanh toan COD
     @GetMapping("/checkout")
     public String checkout(Model model,
                            @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
@@ -69,10 +63,9 @@ public class PaymentController {
                     .map(ci -> BigDecimal.valueOf(ci.getProduct().getItem_price())
                             .multiply(BigDecimal.valueOf(ci.getQuantity())))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            // lưu t vào biến bên ngoài bằng cách dùng holder — hoặc return t trực tiếp; đơn giản:
             model.addAttribute("cartItems", items);
             model.addAttribute("totalBigDecimal", t);
-            model.addAttribute("total", t.intValue()); // dùng int cho URL param
+            model.addAttribute("total", t.intValue());
         });
 
         model.addAttribute("users", user);
@@ -80,10 +73,7 @@ public class PaymentController {
         return "user/orderaddress";
     }
 
-
-    // ==============================
-    // XỬ LÝ SUBMIT COD
-    // ==============================
+    //Xu ly submit COD
     @PostMapping("/cod")
     public String submitCOD(
             @RequestParam String province_name,
@@ -94,12 +84,11 @@ public class PaymentController {
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
 
-        // 🔹 1. Lấy user đang đăng nhập
         String username = principal.getUsername();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 🔹 2. Tạo địa chỉ giao hàng
+        // Tạo địa chỉ giao hàng
         Address address = new Address();
         address.setUser(user);
         address.setAddressLine(addressLine);
@@ -111,12 +100,9 @@ public class PaymentController {
         address.setUpdatedAt(LocalDateTime.now());
         addressRepository.save(address);
 
-
-        // ---- Thanh toán đơn hàng bình thường ----
         Cart cart = cartRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
-        // Lấy danh sách sản phẩm trong giỏ
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
 
         // Kiểm tra tồn kho
@@ -138,30 +124,26 @@ public class PaymentController {
         }
         productRepository.flush();
 
-        //Ghép chuỗi sản phẩm (tên + số lượng)
         String orderItems = cartItems.stream()
                 .map(ci -> ci.getProduct().getItem_name() + " x" + ci.getQuantity())
                 .collect(Collectors.joining(", "));
 
-        //Tính tổng tiền thật (tránh lệ thuộc VNPay amount)
         BigDecimal totalAmount = cartItems.stream()
                 .map(ci -> BigDecimal.valueOf(ci.getProduct().getItem_price())
                         .multiply(BigDecimal.valueOf(ci.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 🔹 3. Tạo đơn hàng (liên kết với địa chỉ)
         OrderHistory order = new OrderHistory();
         order.setUser(user);
-        order.setAddress(address);// <-- liên kết Address
+        order.setAddress(address);
         order.setOrder_items(orderItems);
         order.setTotal_amount(totalAmount);
-        order.setStatus(0);        // pending
+        order.setStatus(0);
         order.setShipping_status(0);
         order.setCreated_at(LocalDateTime.now());
         order.setUpdated_at(LocalDateTime.now());
         orderHistoryRepository.save(order);
 
-        // 🔹 4. Tạo thanh toán COD (liên kết với OrderHistory)
         Payment payment = new Payment();
         payment.setOrderhistory(order);
         payment.setPayment_method(PaymentMethod.COD);
@@ -170,38 +152,45 @@ public class PaymentController {
         payment.setPaid_at(LocalDateTime.now());
         paymentRepository.save(payment);
 
-
         try {
             emailService.sendOrderSuccessEmailViaCOD(user.getEmail(), order);
         } catch (Exception ignored) {}
 
-        // Xóa giỏ hàng
         cartItemRepository.deleteAll(cartItems);
-
         redirectAttributes.addFlashAttribute("success", "Ordered successfully");
 
         return "redirect:/user/home";
     }
 
-
-    // Gọi sang VNPay tạo đơn hàng
+    //Thanh toan
     @GetMapping("/pay")
     public String pay(HttpServletRequest request,
-                      @RequestParam("total") int total) throws UnsupportedEncodingException {
+                      HttpSession session,
+                      @RequestParam("total") int total,
+                      @RequestParam("province_name") String province_name,
+                      @RequestParam("district_name") String district_name,
+                      @RequestParam("ward_name") String ward_name,
+                      @RequestParam("addressLine") String addressLine,
+                      @RequestParam("postalCode") String postalCode) throws UnsupportedEncodingException {
+
+        Map<String, String> addressInfo = new HashMap<>();
+        addressInfo.put("province_name", province_name);
+        addressInfo.put("district_name", district_name);
+        addressInfo.put("ward_name", ward_name);
+        addressInfo.put("addressLine", addressLine);
+        addressInfo.put("postalCode", postalCode);
+        session.setAttribute("addressInfo", addressInfo);
+
         String ipAddress = request.getRemoteAddr();
         String paymentUrl = vnPayService.createOrder(total, "Thanh toán đơn hàng", ipAddress);
         return "redirect:" + paymentUrl;
     }
 
-    // ✅ Thanh toán qua VNPay xong thì TRỪ KHO hàng
+
+    //Thuc hien thanh toan
     @GetMapping("/payment-return")
     @Transactional
     public String paymentResult(HttpSession session,
-                                @RequestParam String province_name,
-                                @RequestParam String district_name,
-                                @RequestParam String ward_name,
-                                @RequestParam String addressLine,
-                                @RequestParam String postalCode,
                                 HttpServletRequest request,
                                 RedirectAttributes redirectAttributes,
                                 @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal)
@@ -232,32 +221,59 @@ public class PaymentController {
         if (orderInfo != null && orderInfo.startsWith("installment:")) {
             Long installmentNo = Long.parseLong(orderInfo.split(":")[1]);
 
-            List<Installment> installments = installmentRepository.findUnpaidByInstallmentNo(installmentNo);
+            List<Installment> installments = installmentRepository.findUnpaidByInstallmentNoAndUser(installmentNo, user.getId());
             if (installments.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "No unpaid installments found for this batch!");
                 return "redirect:/user/spay-later";
             }
 
-            installments.forEach(i -> {
-                i.setPaid(true);
-                i.setPaid_at(LocalDateTime.now());
-            });
-            installmentRepository.saveAll(installments);
+            String paymentBatchId = UUID.randomUUID().toString();
 
-            // Cộng lại hạn mức cho user
-            BigDecimal total1 = installments.stream()
+            for (Installment installment : installments) {
+                installment.setInstallment_batch_id(paymentBatchId);
+                installment.setPaid(true);
+                installment.setPaid_at(LocalDateTime.now());
+
+                // Giu nguyen paid_fee đã có từ DB
+                // Chỉ cộng thêm late_fee nếu có
+                BigDecimal existingPaidFee = Optional.ofNullable(installment.getPaid_fee()).orElse(BigDecimal.ZERO);
+                BigDecimal lateFee = Optional.ofNullable(installment.getLate_fee()).orElse(BigDecimal.ZERO);
+
+                // Nếu có late_fee, cộng thêm vào paid_fee
+                if (lateFee.compareTo(BigDecimal.ZERO) > 0) {
+                    installment.setPaid_fee(existingPaidFee.add(lateFee));
+                }
+
+                installmentRepository.save(installment);
+
+                try {
+                    User insUser = installments.get(0).getPayment().getOrderhistory().getUser();
+                    emailService.sendPaymentSpayLaterSuccessEmail(insUser.getEmail(), installment, principal);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            BigDecimal totalAmount = installments.stream()
                     .map(Installment::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             User insUser = installments.get(0).getPayment().getOrderhistory().getUser();
-            insUser.setCredit_limit(insUser.getCredit_limit().add(total1));
+            insUser.setCredit_limit(insUser.getCredit_limit().add(totalAmount));
+
+            BigDecimal unpaidTotal = installmentRepository.findByUserId(insUser.getId()).stream()
+                    .filter(i -> !i.isPaid())
+                    .map(Installment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            session.setAttribute("currentPaymentPeriod", unpaidTotal);
             userRepository.save(insUser);
             session.setAttribute("user", insUser);
 
             redirectAttributes.addFlashAttribute("success", "Installment batch paid successfully!");
             return "redirect:/user/spay-later";
-        }
-        else if (orderInfo != null && orderInfo.startsWith("all_unpaid_installments")) {
+
+        } else if (orderInfo != null && orderInfo.startsWith("all_unpaid_installments")) {
             Long userId = Long.parseLong(orderInfo.split("=")[1]);
             User insUser = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
@@ -269,6 +285,12 @@ public class PaymentController {
             unpaid.forEach(i -> {
                 i.setPaid(true);
                 i.setPaid_at(LocalDateTime.now());
+
+                // Tinh phi rieng: 2.95% × amount
+                BigDecimal fee = i.getAmount().multiply(BigDecimal.valueOf(0.0295))
+                        .setScale(2, RoundingMode.HALF_UP);
+                BigDecimal late = Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO);
+                i.setPaid_fee(fee.add(late));
             });
             installmentRepository.saveAll(unpaid);
 
@@ -286,7 +308,6 @@ public class PaymentController {
 
         List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
 
-        // Kiểm tra tồn kho
         for (CartItem item : cartItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -296,7 +317,6 @@ public class PaymentController {
             }
         }
 
-        // Trừ hàng
         for (CartItem item : cartItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -305,24 +325,27 @@ public class PaymentController {
         }
         productRepository.flush();
 
-        // Tạo order
-        String orderItems = cartItems.stream()
-                .map(ci -> ci.getProduct().getItem_name() + " x" + ci.getQuantity())
-                .collect(Collectors.joining(", "));
+        Map<String, String> addressInfo = (Map<String, String>) session.getAttribute("addressInfo");
+        if (addressInfo == null) {
+            redirectAttributes.addFlashAttribute("error", "Missing address information!");
+            return "redirect:/user/cart";
+        }
 
-        // 🔹 2. Tạo địa chỉ giao hàng
         Address address = new Address();
         address.setUser(user);
-        address.setAddressLine(addressLine);
-        address.setPostalCode(postalCode);
-        address.setProvince_name(province_name);
-        address.setDistrict_name(district_name);
-        address.setWard_name(ward_name);
+        address.setAddressLine(addressInfo.get("addressLine"));
+        address.setPostalCode(addressInfo.get("postalCode"));
+        address.setProvince_name(addressInfo.get("province_name"));
+        address.setDistrict_name(addressInfo.get("district_name"));
+        address.setWard_name(addressInfo.get("ward_name"));
         address.setCreatedAt(LocalDateTime.now());
         address.setUpdatedAt(LocalDateTime.now());
         addressRepository.save(address);
 
-// ✅ Tạo order có địa chỉ
+        String orderItems = cartItems.stream()
+                .map(ci -> ci.getProduct().getItem_name() + " x" + ci.getQuantity())
+                .collect(Collectors.joining(", "));
+
         OrderHistory order = new OrderHistory();
         order.setUser(user);
         order.setAddress(address);
@@ -334,12 +357,20 @@ public class PaymentController {
         order.setUpdated_at(LocalDateTime.now());
         order = orderHistoryRepository.save(order);
 
+        Payment payment = new Payment();
+        payment.setOrderhistory(order);
+        payment.setPayment_method(PaymentMethod.COD);
+        payment.setStatus(PaymentStatus.PENDING);
+        payment.setCreated_at(LocalDateTime.now());
+        payment.setPaid_at(LocalDateTime.now());
+        paymentRepository.save(payment);
 
         try {
             emailService.sendOrderSuccessEmail(user.getEmail(), order);
         } catch (Exception ignored) {}
 
         cartItemRepository.deleteAll(cartItems);
+        session.removeAttribute("addressInfo");
 
         redirectAttributes.addFlashAttribute("success", "Payment successful via VNPay!");
         return "redirect:/user/home";
@@ -349,15 +380,12 @@ public class PaymentController {
     public String viewSpayLater(Model model,
                                 @AuthenticationPrincipal org.springframework.security.core.userdetails.User principal) {
 
-        // 1️⃣ Lấy thông tin user hiện tại
         String username = principal.getUsername();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        // 2️⃣ Lấy danh sách kỳ trả góp của user
         List<Installment> installments = installmentRepository.findByUserId(user.getId());
 
-        // 3️⃣ Phân loại hóa đơn: chưa trả và đã trả
         List<Installment> unpaidBills = installments.stream()
                 .filter(i -> !i.isPaid())
                 .sorted(Comparator.comparing(Installment::getDue_date))
@@ -368,7 +396,19 @@ public class PaymentController {
                 .sorted(Comparator.comparing(Installment::getPaid_at).reversed())
                 .collect(Collectors.toList());
 
-        // 4️⃣ Gom nhóm các kỳ CHƯA TRẢ theo installment_no
+        // Tổng tiền gốc của TẤT CẢ kỳ chưa trả
+        BigDecimal totalPrincipal = unpaidBills.stream()
+                .map(Installment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        //PHÍ CHUYỂN ĐỔI CHUNG cho hiển thị tổng quan: 2.95% × TỔNG principal
+        BigDecimal totalConversionFee = totalPrincipal.multiply(BigDecimal.valueOf(0.0295))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal totalLateFee = unpaidBills.stream()
+                .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         LinkedHashMap<Long, List<Installment>> groupedUnpaidBills = unpaidBills.stream()
                 .collect(Collectors.groupingBy(
                         Installment::getInstallment_no,
@@ -376,63 +416,83 @@ public class PaymentController {
                         Collectors.toList()
                 ));
 
-        // 5️⃣ Tính toán tổng tiền từng nhóm (UNPAID)
         Map<Long, BigDecimal> principalByGroup = new LinkedHashMap<>();
         Map<Long, BigDecimal> feeByGroup = new LinkedHashMap<>();
         Map<Long, BigDecimal> lateFeeByGroup = new LinkedHashMap<>();
         Map<Long, BigDecimal> grandTotalByGroup = new LinkedHashMap<>();
 
         for (Map.Entry<Long, List<Installment>> entry : groupedUnpaidBills.entrySet()) {
-            BigDecimal principall = entry.getValue().stream()
+            // Tính tổng tiền gốc của nhóm này
+            BigDecimal principalOfGroup = entry.getValue().stream()
                     .map(Installment::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal fee = principall.multiply(BigDecimal.valueOf(0.02)); // phí 2%
-            BigDecimal lateFee = entry.getValue().stream()
+            // CỘNG TỔNG paid_fee TỪ DB cho từng installment trong nhóm
+            BigDecimal feeOfGroup = entry.getValue().stream()
+                    .map(i -> Optional.ofNullable(i.getPaid_fee()).orElse(BigDecimal.ZERO))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Phí trễ hạn của nhóm này
+            BigDecimal lateFeeOfGroup = entry.getValue().stream()
                     .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal total = principall.add(fee).add(lateFee);
+            // TỔNG TIỀN NHÓM = gốc_nhóm + paid_fee_nhóm + phí_trễ_nhóm
+            BigDecimal totalOfGroup = principalOfGroup.add(feeOfGroup).add(lateFeeOfGroup);
 
-            principalByGroup.put(entry.getKey(), principall);
-            feeByGroup.put(entry.getKey(), fee);
-            lateFeeByGroup.put(entry.getKey(), lateFee);
-            grandTotalByGroup.put(entry.getKey(), total);
+            principalByGroup.put(entry.getKey(), principalOfGroup);
+            feeByGroup.put(entry.getKey(), feeOfGroup);
+            lateFeeByGroup.put(entry.getKey(), lateFeeOfGroup);
+            grandTotalByGroup.put(entry.getKey(), totalOfGroup);
         }
 
-        // 6️⃣ Gom nhóm các kỳ ĐÃ TRẢ
-        LinkedHashMap<Long, List<Installment>> groupedPaidBills = paidBills.stream()
+
+        // GROUP PAID BILLS THEO payment_batch_id THAY VÌ installment_no
+        LinkedHashMap<String, List<Installment>> groupedPaidBills = paidBills.stream()
                 .collect(Collectors.groupingBy(
-                        Installment::getInstallment_no,
+                        i -> i.getInstallment_batch_id() != null ? i.getInstallment_batch_id() : "unknown",
                         LinkedHashMap::new,
                         Collectors.toList()
                 ));
 
-        // 7️⃣ Tính tổng tiền từng nhóm (PAID) — giống logic UNPAID
-        Map<Long, BigDecimal> principalByPaidGroup = new LinkedHashMap<>();
-        Map<Long, BigDecimal> feeByPaidGroup = new LinkedHashMap<>();
-        Map<Long, BigDecimal> lateFeeByPaidGroup = new LinkedHashMap<>();
-        Map<Long, BigDecimal> grandTotalByPaidGroup = new LinkedHashMap<>();
+        Map<String, BigDecimal> principalByPaidGroup = new LinkedHashMap<>();
+        Map<String, BigDecimal> feeByPaidGroup = new LinkedHashMap<>();
+        Map<String, BigDecimal> lateFeeByPaidGroup = new LinkedHashMap<>();
+        Map<String, BigDecimal> grandTotalByPaidGroup = new LinkedHashMap<>();
+        Map<String, LocalDateTime> paidDateByBatch = new LinkedHashMap<>();
 
-        for (Map.Entry<Long, List<Installment>> entry : groupedPaidBills.entrySet()) {
-            BigDecimal principall = entry.getValue().stream()
+        // TÍNH TOÁN THEO payment_batch_id
+        for (Map.Entry<String, List<Installment>> entry : groupedPaidBills.entrySet()) {
+            String batchId = entry.getKey();
+
+            // Tiền gốc
+            BigDecimal principalOfPaidGroup = entry.getValue().stream()
                     .map(Installment::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal fee = principall.multiply(BigDecimal.valueOf(0.02)); // phí 2%
-            BigDecimal lateFee = entry.getValue().stream()
+            // PHÍ ĐÃ TRẢ - Lấy từ paid_fee trong DB
+            BigDecimal paidFeeOfGroup = entry.getValue().stream()
+                    .map(i -> Optional.ofNullable(i.getPaid_fee()).orElse(BigDecimal.ZERO))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // PHÍ TRỄ HẠN
+            BigDecimal lateFeeOfPaidGroup = entry.getValue().stream()
                     .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            BigDecimal total = principall.add(fee).add(lateFee);
+            // TỔNG
+            BigDecimal totalOfPaidGroup = principalOfPaidGroup.add(paidFeeOfGroup).add(lateFeeOfPaidGroup);
 
-            principalByPaidGroup.put(entry.getKey(), principall);
-            feeByPaidGroup.put(entry.getKey(), fee);
-            lateFeeByPaidGroup.put(entry.getKey(), lateFee);
-            grandTotalByPaidGroup.put(entry.getKey(), total);
+            // LẤY NGÀY TRẢ TỪ INSTALLMENT ĐẦU TIÊN CỦA BATCH
+            LocalDateTime paidDate = entry.getValue().get(0).getPaid_at();
+
+            principalByPaidGroup.put(batchId, principalOfPaidGroup);
+            feeByPaidGroup.put(batchId, paidFeeOfGroup);
+            lateFeeByPaidGroup.put(batchId, lateFeeOfPaidGroup);
+            grandTotalByPaidGroup.put(batchId, totalOfPaidGroup);
+            paidDateByBatch.put(batchId, paidDate);
         }
 
-        // 8️⃣ Tìm kỳ chưa trả gần nhất (theo due_date nhỏ nhất)
         List<Installment> nextUnpaidGroup = Collections.emptyList();
         if (!unpaidBills.isEmpty()) {
             Installment nextUnpaid = unpaidBills.get(0);
@@ -440,27 +500,10 @@ public class PaymentController {
             nextUnpaidGroup = groupedUnpaidBills.getOrDefault(nextInstallmentNo, Collections.emptyList());
         }
 
-        // 9️⃣ Tính tổng toàn bộ chưa trả
-        BigDecimal totalPrincipal = unpaidBills.stream()
-                .map(Installment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalLateFee = unpaidBills.stream()
-                .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalFee = totalPrincipal.multiply(BigDecimal.valueOf(0.02));
-        BigDecimal totalToPay = totalPrincipal.add(totalFee).add(totalLateFee);
-
-        // 🔟 Truyền dữ liệu sang view
         model.addAttribute("user", user);
         model.addAttribute("availableBalance", user.getCredit_limit());
-
-        // danh sách hóa đơn
         model.addAttribute("unpaidBills", unpaidBills);
         model.addAttribute("paidBills", paidBills);
-
-        // nhóm chưa trả
         model.addAttribute("groupedUnpaidBills", groupedUnpaidBills);
         model.addAttribute("principalByGroup", principalByGroup);
         model.addAttribute("feeByGroup", feeByGroup);
@@ -468,24 +511,17 @@ public class PaymentController {
         model.addAttribute("grandTotalByGroup", grandTotalByGroup);
         model.addAttribute("nextUnpaidGroup", nextUnpaidGroup);
         model.addAttribute("hasNextUnpaid", !nextUnpaidGroup.isEmpty());
-
-        // nhóm đã trả (giống logic UNPAID)
         model.addAttribute("groupedPaidBills", groupedPaidBills);
         model.addAttribute("principalByPaidGroup", principalByPaidGroup);
         model.addAttribute("feeByPaidGroup", feeByPaidGroup);
         model.addAttribute("lateFeeByPaidGroup", lateFeeByPaidGroup);
         model.addAttribute("grandTotalByPaidGroup", grandTotalByPaidGroup);
-
-        // tổng tiền kỳ hiện tại
         model.addAttribute("currentBills",
-                new CurrentBillSummary(totalToPay, totalFee, totalLateFee, unpaidBills));
+                new CurrentBillSummary(totalPrincipal, totalConversionFee, totalLateFee, unpaidBills));
 
         return "user/SpayLater";
     }
 
-
-
-    // ✅ Trả sau: cũng TRỪ HÀNG
     @GetMapping("/spay-later/checkout")
     @Transactional
     public String paymentSpayLater(@RequestParam("period") int period,
@@ -508,7 +544,6 @@ public class PaymentController {
             throw new RuntimeException("Cart is empty");
         }
 
-        // Kiểm tra tồn kho
         for (CartItem item : cartItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -518,7 +553,6 @@ public class PaymentController {
             }
         }
 
-        // Trừ hàng
         for (CartItem item : cartItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new RuntimeException("Product not found"));
@@ -527,18 +561,15 @@ public class PaymentController {
         }
         productRepository.flush();
 
-        // Ghép items
         String orderItems = cartItems.stream()
                 .map(ci -> ci.getProduct().getItem_name() + " x" + ci.getQuantity())
                 .collect(Collectors.joining(", "));
 
-        // Tổng tiền
         BigDecimal orderAmount = cartItems.stream()
                 .map(ci -> BigDecimal.valueOf(ci.getProduct().getItem_price())
                         .multiply(BigDecimal.valueOf(ci.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Trừ hạn mức
         if (user.getCredit_limit().compareTo(orderAmount) < 0) {
             redirectAttributes.addFlashAttribute("error", "Insufficient credit limit");
             return "redirect:/user/cart";
@@ -547,7 +578,6 @@ public class PaymentController {
         user.setCredit_limit(user.getCredit_limit().subtract(orderAmount));
         userRepository.save(user);
 
-        // 🔹 2. Tạo địa chỉ giao hàng
         Address address = new Address();
         address.setUser(user);
         address.setAddressLine(addressLine);
@@ -559,10 +589,9 @@ public class PaymentController {
         address.setUpdatedAt(LocalDateTime.now());
         addressRepository.save(address);
 
-        // ✅ Tạo order có địa chỉ
         OrderHistory order = new OrderHistory();
         order.setUser(user);
-        order.setAddress(address); // ✅ FIX: thêm địa chỉ giao hàng
+        order.setAddress(address);
         order.setTotal_amount(orderAmount);
         order.setShipping_status(0);
         order.setOrder_items(orderItems);
@@ -571,7 +600,6 @@ public class PaymentController {
         order.setUpdated_at(LocalDateTime.now());
         order = orderHistoryRepository.save(order);
 
-
         Payment payment = new Payment();
         payment.setOrderhistory(order);
         payment.setStatus(PaymentStatus.fromCode(0));
@@ -579,49 +607,71 @@ public class PaymentController {
         payment = paymentRepository.save(payment);
 
         spayLaterService.createInstallments(payment, period);
-
         emailService.sendOrderSuccessEmailViaSpayLater(user.getEmail(), order);
 
-        // Xóa giỏ
         cartItemRepository.deleteAll(cartItems);
 
         redirectAttributes.addFlashAttribute("success", "Checkout with SpayLater successful!");
         return "redirect:/user/spay-later";
     }
 
-
-    // Trả từng kỳ qua VNPay
     @GetMapping("/bills/pay/{no}")
     public String payFullInstallment(@PathVariable("no") Long installmentNo,
                                      HttpServletRequest request,
+                                     HttpSession session,
                                      RedirectAttributes redirectAttributes) throws UnsupportedEncodingException {
 
-        // Lấy tất cả installments trong cùng đợt
-        List<Installment> installments = installmentRepository.findUnpaidByInstallmentNo(installmentNo);
-        if (installments.isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "No unpaid installments found for this batch.");
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            throw new RuntimeException("User not logged in");
+        }
+
+        List<Installment> allUnpaidInstallments = installmentRepository.findAllUnpaidByUser(user.getId());
+        if (allUnpaidInstallments.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Không có kỳ trả góp nào chưa thanh toán.");
             return "redirect:/user/spay-later";
         }
 
-        // Tính tổng các khoản
-        BigDecimal principal = installments.stream()
-                .map(Installment::getAmount)
+        List<Installment> unpaidBills = allUnpaidInstallments.stream()
+                .filter(i -> !i.isPaid())
+                .sorted(Comparator.comparing(Installment::getDue_date))
+                .collect(Collectors.toList());
+
+        List<Installment> paidBills = allUnpaidInstallments.stream()
+                .filter(Installment::isPaid)
+                .sorted(Comparator.comparing(Installment::getPaid_at).reversed())
+                .collect(Collectors.toList());
+
+        List<Installment> currentInstallments =
+                installmentRepository.findUnpaidByInstallmentNoAndUser(installmentNo, user.getId());
+        if (currentInstallments.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Không có khoản nào chưa thanh toán trong đợt này.");
+            return "redirect:/user/spay-later";
+        }
+
+        // Tính tổng tiền gốc của kỳ hiện tại
+        BigDecimal principal = currentInstallments.stream()
+                .map(i -> Optional.ofNullable(i.getAmount()).orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal fee = principal.multiply(BigDecimal.valueOf(0.02)); // 2% phí
-        BigDecimal lateFee = installments.stream()
-                .map(i -> i.getLate_fee() == null ? BigDecimal.ZERO : i.getLate_fee())
+        // CỘNG TỔNG paid_fee từ DB của các installment trong kỳ này
+        BigDecimal conversionFee = currentInstallments.stream()
+                .map(i -> Optional.ofNullable(i.getPaid_fee()).orElse(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalAmount = principal.add(fee).add(lateFee);
+        // Tính phí trễ hạn (nếu có)
+        BigDecimal lateFee = currentInstallments.stream()
+                .map(i -> Optional.ofNullable(i.getLate_fee()).orElse(BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Gửi sang VNPay
+        // Tổng thanh toán: gốc + paid_fee_từ_DB + trễ hạn
+        BigDecimal totalAmount = principal.add(conversionFee).add(lateFee)
+                .setScale(0, RoundingMode.HALF_UP);
+
         String ip = request.getRemoteAddr();
         String orderInfo = "installment:" + installmentNo;
         String url = vnPayService.createOrder(totalAmount.intValue(), orderInfo, ip);
 
         return "redirect:" + url;
     }
-
-
 }

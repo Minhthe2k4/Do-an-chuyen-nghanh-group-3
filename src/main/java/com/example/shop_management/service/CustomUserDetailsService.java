@@ -31,9 +31,9 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .toList();
 
 
-        // ✅ Kiểm tra status
+        // Kiểm tra status
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),         // username (thực tế là email)
+                user.getUsername(),
                 user.getPassword(),
                 user.getStatus() == 1,   // enabled nếu status = 1, ngược lại bị chặn login
                 true,
